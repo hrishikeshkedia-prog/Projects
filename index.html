@@ -263,7 +263,7 @@
         <h2>Good morning! 👋</h2>
         <p id="dash-date"></p>
       </div>
-      <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+      <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
     </div>
     <div class="stats-grid" id="stats-grid"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
@@ -282,7 +282,7 @@
   <section class="page" id="page-students">
     <div class="page-header">
       <div><h2>Students</h2><p>Manage your student list</p></div>
-      <button class="btn btn-primary" onclick="openAddStudent()">＋ Add Student</button>
+      <button class="btn btn-primary" onclick="openAddStudent()">&#xFF0B; Add Student</button>
     </div>
     <div class="students-grid" id="students-grid"></div>
   </section>
@@ -293,7 +293,7 @@
       <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
-        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
       </div>
     </div>
     <div class="calendar-header">
@@ -319,7 +319,7 @@
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
       </div>
     </div>
     <div class="sessions-list" id="sessions-list"></div>
@@ -382,7 +382,7 @@
       </div>
       <div class="install-step">
         <div class="install-step-num">3</div>
-        <div class="install-step-text">Tap <b>"Add to Home screen"</b></div>
+        <div class="install-step-text">Tap <b>&quot;Add to Home screen&quot;</b></div>
       </div>
       <div class="install-step">
         <div class="install-step-num">4</div>
@@ -400,7 +400,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-student-title">Add Student</h3>
-      <button class="btn-icon" onclick="closeModal('modal-student')">✕</button>
+      <button class="btn-icon" onclick="closeModal('modal-student')">&#x2715;</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="s-id">
@@ -473,7 +473,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-session-title">Add Session</h3>
-      <button class="btn-icon" onclick="closeModal('modal-session')">✕</button>
+      <button class="btn-icon" onclick="closeModal('modal-session')">&#x2715;</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="sess-id">
@@ -541,7 +541,7 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
       <h3>Session Details</h3>
-      <button class="btn-icon" onclick="closeModal('modal-view-session')">✕</button>
+      <button class="btn-icon" onclick="closeModal('modal-view-session')">&#x2715;</button>
     </div>
     <div class="modal-body" id="view-session-body"></div>
     <div style="padding:0 24px 20px;">
@@ -574,7 +574,7 @@ function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
 let students = load(DB_STUDENTS);
 let sessions = load(DB_SESSIONS);
-let feeRecords = load(DB_FEES); // { id, studentId, month (YYYY-MM), paid }
+let feeRecords = load(DB_FEES);
 
 // ─────────────────────────────────────────────
 // NAVIGATION
@@ -665,10 +665,6 @@ function renderDashboard() {
   // Stats
   const todaySess = sessions.filter(s => s.date === today && s.status !== 'cancelled');
   const monthSess = sessions.filter(s => s.date.startsWith(monthStr(now)) && s.status !== 'cancelled');
-  const monthEarned = monthSess.filter(s => s.status === 'completed').reduce((a, s) => {
-    const st = getStudent(s.studentId);
-    return a + (st && st.feeType === 'session' ? (st.fee || 0) : 0);
-  }, 0);
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-label">Today's Sessions</div><div class="stat-value">${todaySess.length}</div><div class="stat-sub">${now.toLocaleDateString('en-IN',{weekday:'long'})}</div></div>
     <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthSess.length}</div><div class="stat-sub">sessions planned</div></div>
@@ -687,7 +683,7 @@ function renderDashboard() {
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
           <div class="today-name">${st?.name||'Unknown'}</div>
-          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
+          <div class="today-subj">${s.startTime}–${s.endTime}</div>
         </div>
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       </div>`;
@@ -713,7 +709,7 @@ function renderDashboard() {
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${st?.name||'Unknown'}</div>
-          <div style="font-size:12px;color:var(--muted)">${s.subject} · ${fmt12(s.startTime)}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmt12(s.startTime)}</div>
         </div>
       </div>`;
     }).join('');
@@ -735,9 +731,8 @@ function renderStudents() {
     return `<div class="student-card">
       <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name.charAt(0).toUpperCase()}</div>
       <div class="student-name">${s.name}</div>
-      <div class="student-meta">${s.parent ? '👤 ' + s.parent : ''} ${s.phone ? '· 📞 ' + s.phone : ''}</div>
       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        ${s.grade ? `<span class="badge badge-grade">Grade: ${s.grade}</span>` : ''}
+        ${s.grade ? `<span class="badge badge-grade">${s.grade}</span>` : ''}
         <span class="badge badge-subject">${sessCount} sessions this month</span>
       </div>
       <div class="student-subjects">
@@ -745,8 +740,8 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">&#x1F5D1; Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -877,11 +872,8 @@ function renderCalendar() {
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
 
   let cells = [];
-  // prev month padding
   for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, type: 'prev' });
-  // this month
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, type: 'cur' });
-  // next month padding
   let remaining = 42 - cells.length;
   for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
 
@@ -983,7 +975,6 @@ function saveSession() {
   const start = document.getElementById('sess-start').value;
   const end = document.getElementById('sess-end').value;
   if (!studentId || !date || !start || !end) { alert('Please fill all required fields'); return; }
-  const subject = '';
   if (start >= end) { alert('End time must be after start time'); return; }
 
   const id = document.getElementById('sess-id').value;
@@ -992,7 +983,6 @@ function saveSession() {
   const baseSession = {
     id: id || uid(),
     studentId,
-    subject,
     date,
     startTime: start,
     endTime: end,
@@ -1008,7 +998,6 @@ function saveSession() {
     toast('Session updated');
   } else {
     sessions.push(baseSession);
-    // Recurring
     if (recurDays.length) {
       const [y, m] = date.split('-').map(Number);
       const daysInMonth = new Date(y, m, 0).getDate();
@@ -1097,7 +1086,6 @@ function saveSessionComment() {
 // ─────────────────────────────────────────────
 function renderFees() {
   const sel = document.getElementById('fee-month-select');
-  // Populate month dropdown (last 6 months + next 2)
   const now = new Date();
   const months = [];
   for (let i = -1; i <= 6; i++) {
@@ -1137,7 +1125,6 @@ function renderFees() {
 // LESSON PLANS
 // ─────────────────────────────────────────────
 function renderLessonPlans() {
-  // Populate dropdowns
   const stSel = document.getElementById('lp-filter-student');
   const mSel  = document.getElementById('lp-filter-month');
   if (stSel) {
@@ -1174,7 +1161,6 @@ function renderLessonPlans() {
     return;
   }
 
-  // Group by date
   const byDate = {};
   list.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
 
@@ -1182,7 +1168,6 @@ function renderLessonPlans() {
     const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
     const cards = byDate[date].map(s => {
       const st = getStudent(s.studentId);
-      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
       return `<div class="lp-card">
         <div class="lp-card-header">
           <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
@@ -1190,7 +1175,6 @@ function renderLessonPlans() {
             <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
             <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
           </div>
-          <span class="${subClass}">${s.subject}</span>
           <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
         </div>
         <div class="lp-card-body">
@@ -1203,8 +1187,8 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
-            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1F4AC; Add Comment</button>
           </div>
         </div>
       </div>`;
