@@ -263,7 +263,7 @@
         <h2>Good morning! 👋</h2>
         <p id="dash-date"></p>
       </div>
-      <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+      <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
     </div>
     <div class="stats-grid" id="stats-grid"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
@@ -282,7 +282,7 @@
   <section class="page" id="page-students">
     <div class="page-header">
       <div><h2>Students</h2><p>Manage your student list</p></div>
-      <button class="btn btn-primary" onclick="openAddStudent()">&#xff0b; Add Student</button>
+      <button class="btn btn-primary" onclick="openAddStudent()">＋ Add Student</button>
     </div>
     <div class="students-grid" id="students-grid"></div>
   </section>
@@ -293,13 +293,13 @@
       <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="calendar-header">
-      <button class="btn-icon" onclick="changeMonth(-1)">◄</button>
+      <button class="btn-icon" onclick="changeMonth(-1)">◀</button>
       <span class="calendar-month" id="cal-month-label"></span>
-      <button class="btn-icon" onclick="changeMonth(1)">►</button>
+      <button class="btn-icon" onclick="changeMonth(1)">▶</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
   </section>
@@ -319,7 +319,7 @@
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="sessions-list" id="sessions-list"></div>
@@ -400,7 +400,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-student-title">Add Student</h3>
-      <button class="btn-icon" onclick="closeModal('modal-student')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-student')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="s-id">
@@ -413,12 +413,15 @@
           <label>Grade / Class *</label>
           <select id="s-grade">
             <option value="">Select grade...</option>
-            <option value="Primary (KG/Nursery)">Primary (KG / Nursery)</option>
+            <option value="Nursery">Nursery</option>
+            <option value="KG">KG</option>
             <option value="Grade 1">Grade 1</option>
             <option value="Grade 2">Grade 2</option>
             <option value="Grade 3">Grade 3</option>
             <option value="Grade 4">Grade 4</option>
             <option value="Grade 5">Grade 5</option>
+            <option value="Grade 6">Grade 6</option>
+            <option value="Grade 7">Grade 7</option>
           </select>
         </div>
       </div>
@@ -469,7 +472,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-session-title">Add Session</h3>
-      <button class="btn-icon" onclick="closeModal('modal-session')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-session')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="sess-id">
@@ -537,7 +540,7 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
       <h3>Session Details</h3>
-      <button class="btn-icon" onclick="closeModal('modal-view-session')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-view-session')">✕</button>
     </div>
     <div class="modal-body" id="view-session-body"></div>
     <div style="padding:0 24px 20px;">
@@ -666,10 +669,8 @@ function renderDashboard() {
     return a + (st && st.feeType === 'session' ? (st.fee || 0) : 0);
   }, 0);
   document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Active Students</div><div class="stat-value">${students.length}</div><div class="stat-sub">enrolled</div></div>
     <div class="stat-card"><div class="stat-label">Today's Sessions</div><div class="stat-value">${todaySess.length}</div><div class="stat-sub">${now.toLocaleDateString('en-IN',{weekday:'long'})}</div></div>
     <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthSess.length}</div><div class="stat-sub">sessions planned</div></div>
-    <div class="stat-card"><div class="stat-label">Earned (${now.toLocaleDateString('en-IN',{month:'short'})})</div><div class="stat-value">₹${monthEarned.toLocaleString('en-IN')}</div><div class="stat-sub">from completed sessions</div></div>
   `;
 
   // Today
@@ -743,8 +744,8 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270f;&#xfe0f; Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">&#x1f5d1; Delete</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -1201,8 +1202,8 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270f;&#xfe0f; Edit Plan</button>
-            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1f4ac; Add Comment</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
           </div>
         </div>
       </div>`;
