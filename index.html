@@ -146,6 +146,23 @@
   .fee-table tr:last-child td { border-bottom: none; }
   .fee-table tr:hover td { background: var(--bg); }
 
+  /* ── Lesson Plan cards ── */
+  .lp-month-group { margin-bottom: 28px; }
+  .lp-month-heading { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .lp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .lp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .lp-card-header { padding: 12px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .lp-card-meta { flex: 1; min-width: 0; }
+  .lp-card-name { font-size: 14px; font-weight: 700; }
+  .lp-card-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .lp-card-body { padding: 12px 14px; }
+  .lp-plan-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: var(--text); }
+  .lp-no-plan { font-size: 13px; color: var(--muted); font-style: italic; padding: 8px 0; }
+  .lp-comment-box { margin-top: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #78350f; }
+  .lp-comment-label { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 4px; }
+  .sub-badge-eng { background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .sub-badge-maths { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
   /* ── Empty state ── */
   .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
   .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
@@ -208,8 +225,11 @@
     <div class="nav-item" data-page="fees">
       <span class="nav-icon">💰</span> Fees
     </div>
+    <div class="nav-item" data-page="lesson-plans">
+      <span class="nav-icon">📚</span> Lesson Plans
+    </div>
   </nav>
-  <div class="sidebar-footer">TuitionPlanner v1.1</div>
+  <div class="sidebar-footer">TuitionPlanner v1.2</div>
 </aside>
 
 <!-- MAIN -->
@@ -298,6 +318,25 @@
       </tr></thead>
       <tbody id="fee-tbody"></tbody>
     </table>
+  </section>
+
+  <!-- LESSON PLANS -->
+  <section class="page" id="page-lesson-plans">
+    <div class="page-header">
+      <div><h2>Lesson Plans</h2><p>Plans and teacher comments for each session</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="lp-filter-student" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Students</option>
+        </select>
+        <select id="lp-filter-subject" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Subjects</option>
+          <option value="English">English</option>
+          <option value="Maths">Maths</option>
+        </select>
+        <select id="lp-filter-month" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
+      </div>
+    </div>
+    <div id="lp-list"></div>
   </section>
 
 </main>
@@ -487,6 +526,7 @@
 <div id="toast"></div>
 
 <script>
+// DATA
 const DB_STUDENTS = 'tp_students';
 const DB_SESSIONS = 'tp_sessions';
 const DB_FEES     = 'tp_fees';
@@ -498,6 +538,7 @@ let students = load(DB_STUDENTS);
 let sessions = load(DB_SESSIONS);
 let feeRecords = load(DB_FEES);
 
+// NAVIGATION
 let currentPage = 'dashboard';
 
 document.querySelectorAll('.nav-item').forEach(el => {
@@ -523,8 +564,10 @@ function renderPage(pg) {
   else if (pg === 'schedule') renderCalendar();
   else if (pg === 'sessions') renderSessions();
   else if (pg === 'fees') renderFees();
+  else if (pg === 'lesson-plans') renderLessonPlans();
 }
 
+// HAMBURGER (mobile)
 document.getElementById('hamburger').addEventListener('click', () => {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('overlay-bg').classList.toggle('open');
@@ -535,6 +578,7 @@ function closeSidebar() {
   document.getElementById('overlay-bg').classList.remove('open');
 }
 
+// UTILS
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function fmt12(t) {
   if (!t) return '';
@@ -564,6 +608,7 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
+// DASHBOARD
 function renderDashboard() {
   const today = todayStr();
   const now = new Date();
@@ -628,6 +673,7 @@ function renderDashboard() {
   }
 }
 
+// STUDENTS
 function renderStudents() {
   const grid = document.getElementById('students-grid');
   if (!students.length) {
@@ -650,7 +696,7 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;&#xFE0F; Edit</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
       </div>
     </div>`;
@@ -763,6 +809,7 @@ function refreshStudentDropdowns() {
   });
 }
 
+// CALENDAR
 let calDate = new Date();
 
 function changeMonth(delta) {
@@ -779,7 +826,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -800,8 +847,10 @@ function renderCalendar() {
       <div class="cal-date">${day}</div>
       ${daySessions.slice(0,2).map(s => {
         const st = getStudent(s.studentId);
+        const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
+        const lpIcon = s.lessonPlan ? ' 📚' : '';
         return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
-          onclick="event.stopPropagation();viewSession('${s.id}')">${fmt12(s.startTime)} ${st?.name||'?'}</div>`;
+          onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
       ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
     </div>`;
@@ -814,6 +863,7 @@ function calDayClick(dateStr) {
   openAddSession(dateStr);
 }
 
+// SESSIONS
 function renderSessions() {
   refreshStudentDropdowns();
   const filterSt = document.getElementById('session-filter-student').value;
@@ -994,6 +1044,7 @@ function saveSessionComment() {
   toast('Comment saved');
 }
 
+// FEES
 function renderFees() {
   const sel = document.getElementById('fee-month-select');
   const now = new Date();
@@ -1031,6 +1082,85 @@ function renderFees() {
   }).join('');
 }
 
+// LESSON PLANS
+function renderLessonPlans() {
+  const stSel = document.getElementById('lp-filter-student');
+  const mSel  = document.getElementById('lp-filter-month');
+  if (stSel) {
+    const cur = stSel.value;
+    stSel.innerHTML = '<option value="">All Students</option>';
+    students.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; stSel.appendChild(o); });
+    stSel.value = cur;
+  }
+  const now = new Date();
+  if (mSel && !mSel.options.length) {
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const o = document.createElement('option');
+      o.value = monthStr(d);
+      o.textContent = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      if (monthStr(d) === monthStr(now)) o.selected = true;
+      mSel.appendChild(o);
+    }
+  }
+
+  const filterSt   = document.getElementById('lp-filter-student')?.value || '';
+  const filterSubj = document.getElementById('lp-filter-subject')?.value || '';
+  const filterMon  = document.getElementById('lp-filter-month')?.value || monthStr(now);
+
+  let list = sessions
+    .filter(s => s.date.startsWith(filterMon))
+    .filter(s => !filterSt || s.studentId === filterSt)
+    .filter(s => !filterSubj || s.subject === filterSubj)
+    .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+  const box = document.getElementById('lp-list');
+  if (!list.length) {
+    box.innerHTML = `<div class="empty-state"><div class="icon">📚</div><p>No sessions found for this filter.<br>Add a lesson plan when scheduling a session.</p></div>`;
+    return;
+  }
+
+  const byDate = {};
+  list.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+
+  box.innerHTML = Object.keys(byDate).sort().map(date => {
+    const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+    const cards = byDate[date].map(s => {
+      const st = getStudent(s.studentId);
+      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
+      return `<div class="lp-card">
+        <div class="lp-card-header">
+          <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
+          <div class="lp-card-meta">
+            <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
+            <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
+          </div>
+          <span class="${subClass}">${s.subject}</span>
+          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
+        </div>
+        <div class="lp-card-body">
+          ${s.lessonPlan
+            ? `<div class="lp-plan-box">${s.lessonPlan}</div>`
+            : `<div class="lp-no-plan">No lesson plan written for this session.</div>`}
+          ${s.comment ? `
+            <div class="lp-comment-box">
+              <div class="lp-comment-label">💬 Teacher's Comment</div>
+              ${s.comment}
+            </div>` : ''}
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="lp-month-group">
+      <div class="lp-month-heading">${label}</div>
+      <div class="lp-cards">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
 function togglePaid(studentId, month) {
   const key = `${studentId}_${month}`;
   const i = feeRecords.findIndex(f => f.id === key);
@@ -1041,6 +1171,7 @@ function togglePaid(studentId, month) {
   toast('Fee status updated');
 }
 
+// MODAL HELPERS
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -1048,8 +1179,10 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
+// PRINT
 function printSchedule() { window.print(); }
 
+// INIT
 refreshStudentDropdowns();
 renderDashboard();
 </script>
