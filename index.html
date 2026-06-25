@@ -385,16 +385,6 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Parent / Guardian Name</label>
-          <input id="s-parent" placeholder="e.g. Mrs. Sharma">
-        </div>
-        <div class="form-group">
-          <label>Contact Number</label>
-          <input id="s-phone" placeholder="e.g. 9876543210" type="tel">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
           <label>Fee Amount (₹)</label>
           <input id="s-fee" type="number" placeholder="e.g. 500" min="0">
         </div>
@@ -437,19 +427,9 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="sess-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Student *</label>
-          <select id="sess-student"><option value="">Select student...</option></select>
-        </div>
-        <div class="form-group">
-          <label>Subject *</label>
-          <select id="sess-subject">
-            <option value="">Select subject...</option>
-            <option value="English">English</option>
-            <option value="Maths">Maths</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Student *</label>
+        <select id="sess-student"><option value="">Select student...</option></select>
       </div>
       <div class="form-group">
         <label>Date *</label>
@@ -647,7 +627,7 @@ function renderDashboard() {
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
           <div class="today-name">${st?.name||'Unknown'}</div>
-          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
+          <div class="today-subj">${fmt12(s.startTime)}–${fmt12(s.endTime)}</div>
         </div>
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       </div>`;
@@ -672,7 +652,7 @@ function renderDashboard() {
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${st?.name||'Unknown'}</div>
-          <div style="font-size:12px;color:var(--muted)">${s.subject} · ${fmt12(s.startTime)}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmt12(s.startTime)}</div>
         </div>
       </div>`;
     }).join('');
@@ -692,7 +672,6 @@ function renderStudents() {
     return `<div class="student-card">
       <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name.charAt(0).toUpperCase()}</div>
       <div class="student-name">${s.name}</div>
-      <div class="student-meta">${s.parent ? '👤 ' + s.parent : ''} ${s.phone ? '· 📞 ' + s.phone : ''}</div>
       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
         ${s.grade ? `<span class="badge badge-grade">Grade: ${s.grade}</span>` : ''}
         <span class="badge badge-subject">${sessCount} sessions this month</span>
@@ -725,8 +704,6 @@ function openAddStudent() {
   document.getElementById('s-grade').value = '';
   document.getElementById('s-sub-english').checked = false;
   document.getElementById('s-sub-maths').checked = false;
-  document.getElementById('s-parent').value = '';
-  document.getElementById('s-phone').value = '';
   document.getElementById('s-fee').value = '';
   document.getElementById('s-fee-type').value = 'session';
   selectedColor = '#6366f1';
@@ -746,8 +723,6 @@ function editStudent(id) {
   const subs = (s.subjects || '').split(',').map(x => x.trim());
   document.getElementById('s-sub-english').checked = subs.includes('English');
   document.getElementById('s-sub-maths').checked = subs.includes('Maths');
-  document.getElementById('s-parent').value = s.parent || '';
-  document.getElementById('s-phone').value = s.phone || '';
   document.getElementById('s-fee').value = s.fee || '';
   document.getElementById('s-fee-type').value = s.feeType || 'session';
   selectedColor = s.color || '#6366f1';
@@ -770,8 +745,6 @@ function saveStudent() {
     name,
     grade: document.getElementById('s-grade').value,
     subjects: subsArr.join(', '),
-    parent: document.getElementById('s-parent').value.trim(),
-    phone: document.getElementById('s-phone').value.trim(),
     fee: parseFloat(document.getElementById('s-fee').value) || 0,
     feeType: document.getElementById('s-fee-type').value,
     color: document.getElementById('s-color').value || '#6366f1',
@@ -832,7 +805,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -853,10 +826,9 @@ function renderCalendar() {
       <div class="cal-date">${day}</div>
       ${daySessions.slice(0,2).map(s => {
         const st = getStudent(s.studentId);
-        const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
         const lpIcon = s.lessonPlan ? ' 📚' : '';
         return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
-          onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
+          onclick="event.stopPropagation();viewSession('${s.id}')">${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
       ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
     </div>`;
@@ -889,7 +861,7 @@ function renderSessions() {
       <div class="session-time">${fmtDate(s.date)}<br><span style="font-weight:400;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</span></div>
       <div class="session-info">
         <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
-        <div class="session-detail">${s.subject}${s.lessonPlan ? ' · ' + s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
+        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
       </div>
       <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       <div class="session-actions">
@@ -905,7 +877,6 @@ function openAddSession(dateStr) {
   document.getElementById('modal-session-title').textContent = 'Add Session';
   document.getElementById('sess-id').value = '';
   document.getElementById('sess-student').value = '';
-  document.getElementById('sess-subject').value = '';
   document.getElementById('sess-date').value = dateStr || todayStr();
   document.getElementById('sess-start').value = '16:00';
   document.getElementById('sess-end').value = '17:00';
@@ -924,7 +895,6 @@ function editSession(id) {
   document.getElementById('sess-id').value = s.id;
   refreshStudentDropdowns();
   document.getElementById('sess-student').value = s.studentId;
-  document.getElementById('sess-subject').value = s.subject;
   document.getElementById('sess-date').value = s.date;
   document.getElementById('sess-start').value = s.startTime;
   document.getElementById('sess-end').value = s.endTime;
@@ -937,11 +907,10 @@ function editSession(id) {
 
 function saveSession() {
   const studentId = document.getElementById('sess-student').value;
-  const subject = document.getElementById('sess-subject').value.trim();
   const date = document.getElementById('sess-date').value;
   const start = document.getElementById('sess-start').value;
   const end = document.getElementById('sess-end').value;
-  if (!studentId || !subject || !date || !start || !end) { alert('Please fill all required fields'); return; }
+  if (!studentId || !date || !start || !end) { alert('Please fill all required fields'); return; }
   if (start >= end) { alert('End time must be after start time'); return; }
 
   const id = document.getElementById('sess-id').value;
@@ -950,7 +919,6 @@ function saveSession() {
   const baseSession = {
     id: id || uid(),
     studentId,
-    subject,
     date,
     startTime: start,
     endTime: end,
@@ -1016,8 +984,7 @@ function viewSession(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmtDate(s.date)}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
-      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Subject</div><div style="font-size:15px;font-weight:600;margin-top:3px">${s.subject}</div></div>
-      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span></div></div>
+      <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span></div></div>
     </div>
     ${s.lessonPlan ? `
       <div style="margin-top:14px;">
@@ -1133,7 +1100,6 @@ function renderLessonPlans() {
     const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
     const cards = byDate[date].map(s => {
       const st = getStudent(s.studentId);
-      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
       return `<div class="lp-card">
         <div class="lp-card-header">
           <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
@@ -1141,8 +1107,7 @@ function renderLessonPlans() {
             <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
             <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
           </div>
-          <span class="${subClass}">${s.subject}</span>
-          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
+          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
         </div>
         <div class="lp-card-body">
           ${s.lessonPlan
