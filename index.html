@@ -10,3 +10,1265 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TuitionPlanner">
 <link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root {
+    --primary: #6366f1;
+    --primary-light: #eef2ff;
+    --primary-dark: #4f46e5;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+  }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo h1 { font-size: 17px; font-weight: 700; color: var(--primary); }
+  .sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 12px 10px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); margin-bottom: 3px; transition: all .15s; }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+  .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+
+  /* ── Main ── */
+  #main { margin-left: var(--sidebar-w); flex: 1; padding: 24px; max-width: calc(100vw - var(--sidebar-w)); }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+  .page-header h2 { font-size: 22px; font-weight: 700; }
+  .page-header p { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .15s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+  .btn-outline:hover { background: var(--primary-light); }
+  .btn-danger { background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 6px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); cursor: pointer; font-size: 15px; }
+  .btn-icon:hover { background: var(--border); }
+
+  /* ── Cards / Stat tiles ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 28px; font-weight: 700; margin-top: 6px; color: var(--primary); }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Students list ── */
+  .students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .student-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; position: relative; }
+  .student-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .student-name { font-size: 16px; font-weight: 600; }
+  .student-meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .student-subjects { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+  .badge { display: inline-flex; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-subject { background: var(--primary-light); color: var(--primary); }
+  .badge-grade { background: #fef3c7; color: #92400e; }
+  .badge-success { background: #dcfce7; color: #166534; }
+  .badge-danger { background: #fef2f2; color: #991b1b; }
+  .badge-warning { background: #fffbeb; color: #92400e; }
+  .student-card-actions { display: flex; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .student-fee { font-size: 13px; font-weight: 600; color: var(--success); margin-top: 6px; }
+
+  /* ── Calendar ── */
+  .calendar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .calendar-month { font-size: 20px; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .cal-day-header { background: var(--surface); padding: 8px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .cal-day { background: var(--surface); min-height: 90px; padding: 6px; position: relative; cursor: pointer; transition: background .1s; }
+  .cal-day:hover { background: #f8faff; }
+  .cal-day.other-month .cal-date { color: #cbd5e1; }
+  .cal-day.today { background: var(--primary-light); }
+  .cal-day.today .cal-date { color: var(--primary); font-weight: 700; }
+  .cal-date { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .cal-session { font-size: 10px; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  .cal-session:hover { opacity: .85; }
+  .cal-more { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Sessions list ── */
+  .sessions-list { display: flex; flex-direction: column; gap: 10px; }
+  .session-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .session-time { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; min-width: 90px; }
+  .session-info { flex: 1; min-width: 0; }
+  .session-name { font-size: 15px; font-weight: 600; }
+  .session-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .session-actions { display: flex; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,.2); max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h3 { font-size: 17px; font-weight: 700; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 14px 24px 20px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border); }
+
+  /* ── Forms ── */
+  .form-group { margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 5px; color: var(--text); }
+  input, select, textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; color: var(--text); background: var(--surface); transition: border-color .15s; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+  textarea { resize: vertical; min-height: 72px; }
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkbox-item { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+  .checkbox-item input[type=checkbox] { width: auto; }
+
+  /* ── Today panel ── */
+  .today-sessions { display: flex; flex-direction: column; gap: 8px; }
+  .today-item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .today-time { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; min-width: 80px; }
+  .today-info { flex: 1; }
+  .today-name { font-size: 14px; font-weight: 600; }
+  .today-subj { font-size: 12px; color: var(--muted); }
+
+  /* ── Upcoming ── */
+  .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
+  .upcoming-item { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; align-items: center; }
+  .upcoming-date-badge { background: var(--primary-light); color: var(--primary); border-radius: 8px; padding: 6px 10px; text-align: center; min-width: 46px; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .upcoming-date-badge span { display: block; font-size: 10px; font-weight: 500; }
+
+  /* ── Fee tracker ── */
+  .fee-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .fee-table th { background: var(--bg); padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); }
+  .fee-table td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid var(--border); }
+  .fee-table tr:last-child td { border-bottom: none; }
+  .fee-table tr:hover td { background: var(--bg); }
+
+  /* ── Lesson Plan cards ── */
+  .lp-month-group { margin-bottom: 28px; }
+  .lp-month-heading { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .lp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .lp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .lp-card-header { padding: 12px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
+  .lp-card-meta { flex: 1; min-width: 0; }
+  .lp-card-name { font-size: 14px; font-weight: 700; }
+  .lp-card-date { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .lp-card-body { padding: 12px 14px; }
+  .lp-plan-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: var(--text); }
+  .lp-no-plan { font-size: 13px; color: var(--muted); font-style: italic; padding: 8px 0; }
+  .lp-comment-box { margin-top: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #78350f; }
+  .lp-comment-label { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 4px; }
+  .sub-badge-eng { background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .sub-badge-maths { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 14px; z-index: 999; opacity: 0; transform: translateY(10px); transition: all .25s; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Print ── */
+  @media print {
+    #sidebar, .page-header .btn, .session-actions, .student-card-actions { display: none !important; }
+    #main { margin-left: 0; }
+    .page { display: block !important; }
+    .page:not(.active) { display: none !important; }
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 700px) {
+    :root { --sidebar-w: 0px; }
+    #sidebar { transform: translateX(-220px); transition: transform .2s; width: 220px; }
+    #sidebar.open { transform: translateX(0); }
+    #main { margin-left: 0; padding: 16px; }
+    .hamburger { display: flex !important; }
+    .form-row { grid-template-columns: 1fr; }
+    .cal-grid { font-size: 11px; }
+    .cal-day { min-height: 60px; }
+    .cal-session { display: none; }
+    .cal-day.has-session::after { content: '●'; color: var(--primary); font-size: 8px; display: block; }
+  }
+  .hamburger { display: none; padding: 8px; cursor: pointer; font-size: 20px; background: none; border: none; }
+  .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 99; }
+  .overlay-bg.open { display: block; }
+  /* Install button */
+  #install-fab { position: fixed; bottom: 20px; right: 20px; z-index: 200; background: var(--primary); color: #fff; border: none; border-radius: 50px; padding: 12px 18px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(99,102,241,.4); display: flex; align-items: center; gap: 8px; }
+  #install-fab:hover { background: var(--primary-dark); }
+  #install-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; align-items: center; justify-content: center; }
+  #install-modal-overlay.open { display: flex; }
+  #install-modal { background: #fff; border-radius: 16px; padding: 24px; max-width: 360px; width: 90%; }
+  #install-modal h3 { font-size: 18px; margin-bottom: 6px; color: var(--primary); }
+  #install-modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .install-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .install-step-num { background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .install-step-text { font-size: 14px; line-height: 1.5; }
+  .install-step-text b { color: var(--text); }
+  .install-divider { text-align: center; font-size: 12px; color: var(--muted); margin: 16px 0; font-weight: 600; }
+  #btn-native-install { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; display: none; }
+  #btn-close-install { width: 100%; padding: 10px; background: var(--bg); color: var(--muted); border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburger" title="Menu">☰</button>
+<div class="overlay-bg" id="overlay-bg"></div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <h1>✏️ TuitionPlanner</h1>
+    <p>Monthly Schedule Manager</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard">
+      <span class="nav-icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" data-page="students">
+      <span class="nav-icon">👥</span> Students
+    </div>
+    <div class="nav-item" data-page="schedule">
+      <span class="nav-icon">📅</span> Schedule
+    </div>
+    <div class="nav-item" data-page="sessions">
+      <span class="nav-icon">📋</span> Sessions
+    </div>
+    <div class="nav-item" data-page="fees">
+      <span class="nav-icon">💰</span> Fees
+    </div>
+    <div class="nav-item" data-page="lesson-plans">
+      <span class="nav-icon">📚</span> Lesson Plans
+    </div>
+  </nav>
+  <div class="sidebar-footer">TuitionPlanner v1.2</div>
+</aside>
+
+<!-- MAIN -->
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <section class="page active" id="page-dashboard">
+    <div class="page-header">
+      <div>
+        <h2>Good morning! 👋</h2>
+        <p id="dash-date"></p>
+      </div>
+      <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
+      <div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Today's Sessions</h3>
+        <div class="today-sessions" id="today-sessions"></div>
+      </div>
+      <div>
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Upcoming (next 7 days)</h3>
+        <div class="upcoming-list" id="upcoming-sessions"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section class="page" id="page-students">
+    <div class="page-header">
+      <div><h2>Students</h2><p>Manage your student list</p></div>
+      <button class="btn btn-primary" onclick="openAddStudent()">&#xff0b; Add Student</button>
+    </div>
+    <div class="students-grid" id="students-grid"></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section class="page" id="page-schedule">
+    <div class="page-header">
+      <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+      </div>
+    </div>
+    <div class="calendar-header">
+      <button class="btn-icon" onclick="changeMonth(-1)">◄</button>
+      <span class="calendar-month" id="cal-month-label"></span>
+      <button class="btn-icon" onclick="changeMonth(1)">►</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </section>
+
+  <!-- SESSIONS -->
+  <section class="page" id="page-sessions">
+    <div class="page-header">
+      <div><h2>All Sessions</h2><p>Detailed session log</p></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="session-filter-student" onchange="renderSessions()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Students</option>
+        </select>
+        <select id="session-filter-status" onchange="renderSessions()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Status</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="missed">Missed</option>
+        </select>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xff0b; Add Session</button>
+      </div>
+    </div>
+    <div class="sessions-list" id="sessions-list"></div>
+  </section>
+
+  <!-- FEES -->
+  <section class="page" id="page-fees">
+    <div class="page-header">
+      <div><h2>Fee Tracker</h2><p>Monthly payment overview</p></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="fee-month-select" onchange="renderFees()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
+      </div>
+    </div>
+    <table class="fee-table" id="fee-table">
+      <thead><tr>
+        <th>Student</th><th>Sessions</th><th>Rate</th><th>Amount Due</th><th>Status</th><th>Action</th>
+      </tr></thead>
+      <tbody id="fee-tbody"></tbody>
+    </table>
+  </section>
+
+  <!-- LESSON PLANS -->
+  <section class="page" id="page-lesson-plans">
+    <div class="page-header">
+      <div><h2>Lesson Plans</h2><p>Plans and teacher comments for each session</p></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="lp-filter-student" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Students</option>
+        </select>
+        <select id="lp-filter-subject" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
+          <option value="">All Subjects</option>
+          <option value="English">English</option>
+          <option value="Maths">Maths</option>
+        </select>
+        <select id="lp-filter-month" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
+      </div>
+    </div>
+    <div id="lp-list"></div>
+  </section>
+
+</main>
+
+<!-- Install FAB -->
+<button id="install-fab" onclick="openInstallModal()">📲 Install App</button>
+
+<!-- Install Modal -->
+<div id="install-modal-overlay">
+  <div id="install-modal">
+    <h3>📲 Add to Home Screen</h3>
+    <p>Open this app like a normal app from your home screen.</p>
+    <button id="btn-native-install" onclick="doNativeInstall()">Install Now</button>
+    <div id="manual-steps">
+      <div class="install-step">
+        <div class="install-step-num">1</div>
+        <div class="install-step-text">Open this page in <b>Chrome</b> browser</div>
+      </div>
+      <div class="install-step">
+        <div class="install-step-num">2</div>
+        <div class="install-step-text">Tap the <b>three dots ⋮</b> menu at the top right</div>
+      </div>
+      <div class="install-step">
+        <div class="install-step-num">3</div>
+        <div class="install-step-text">Tap <b>"Add to Home screen"</b></div>
+      </div>
+      <div class="install-step">
+        <div class="install-step-num">4</div>
+        <div class="install-step-text">Tap <b>Add</b> — the app icon will appear on your home screen</div>
+      </div>
+    </div>
+    <button id="btn-close-install" onclick="closeInstallModal()">Got it ✓</button>
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- Add/Edit Student -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-student-title">Add Student</h3>
+      <button class="btn-icon" onclick="closeModal('modal-student')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="s-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Student Name *</label>
+          <input id="s-name" placeholder="e.g. Arjun, Priya" required>
+        </div>
+        <div class="form-group">
+          <label>Grade / Class *</label>
+          <select id="s-grade">
+            <option value="">Select grade...</option>
+            <option value="Primary (KG/Nursery)">Primary (KG / Nursery)</option>
+            <option value="Grade 1">Grade 1</option>
+            <option value="Grade 2">Grade 2</option>
+            <option value="Grade 3">Grade 3</option>
+            <option value="Grade 4">Grade 4</option>
+            <option value="Grade 5">Grade 5</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Subjects</label>
+        <div style="display:flex;gap:16px;margin-top:4px;">
+          <label class="checkbox-item" style="font-size:14px;font-weight:500;"><input type="checkbox" id="s-sub-english" style="width:auto;"> English</label>
+          <label class="checkbox-item" style="font-size:14px;font-weight:500;"><input type="checkbox" id="s-sub-maths" style="width:auto;"> Maths</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fee Amount (₹)</label>
+          <input id="s-fee" type="number" placeholder="e.g. 500" min="0">
+        </div>
+        <div class="form-group">
+          <label>Fee Type</label>
+          <select id="s-fee-type">
+            <option value="session">Per Session</option>
+            <option value="monthly">Per Month</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Color</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="color-picker">
+          <div class="color-dot" data-color="#6366f1" style="width:24px;height:24px;border-radius:50%;background:#6366f1;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#ec4899" style="width:24px;height:24px;border-radius:50%;background:#ec4899;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#f59e0b" style="width:24px;height:24px;border-radius:50%;background:#f59e0b;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#22c55e" style="width:24px;height:24px;border-radius:50%;background:#22c55e;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#ef4444" style="width:24px;height:24px;border-radius:50%;background:#ef4444;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#14b8a6" style="width:24px;height:24px;border-radius:50%;background:#14b8a6;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#8b5cf6" style="width:24px;height:24px;border-radius:50%;background:#8b5cf6;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+          <div class="color-dot" data-color="#f97316" style="width:24px;height:24px;border-radius:50%;background:#f97316;cursor:pointer;border:2px solid transparent;" onclick="selectColor(this)"></div>
+        </div>
+        <input type="hidden" id="s-color" value="#6366f1">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStudent()">Save Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Session -->
+<div class="modal-overlay" id="modal-session">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-session-title">Add Session</h3>
+      <button class="btn-icon" onclick="closeModal('modal-session')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sess-id">
+      <div class="form-group">
+        <label>Student *</label>
+        <select id="sess-student"><option value="">Select student...</option></select>
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input id="sess-date" type="date">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time *</label>
+          <input id="sess-start" type="time">
+        </div>
+        <div class="form-group">
+          <label>End Time *</label>
+          <input id="sess-end" type="time">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="sess-status">
+          <option value="scheduled">Scheduled</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="missed">Missed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Recurring?</label>
+        <div class="checkbox-group" id="recurring-days-wrap">
+          <label style="margin-bottom:0;font-weight:400;color:var(--muted);font-size:12px;">Repeat on days:</label>
+          <div class="checkbox-group" style="margin-top:6px;">
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="0"> Sun</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="1"> Mon</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="2"> Tue</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="3"> Wed</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="4"> Thu</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="5"> Fri</label>
+            <label class="checkbox-item"><input type="checkbox" class="rec-day" value="6"> Sat</label>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">Check days to auto-fill sessions for the whole month</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Lesson Plan</label>
+        <textarea id="sess-lesson-plan" placeholder="What will you teach today? e.g. Chapter 4 – Fractions: Introduction, practice sums. Phonics – blends 'bl', 'cl'." style="min-height:90px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notes / Reminders</label>
+        <textarea id="sess-notes" placeholder="e.g. Bring worksheet, revision of last topic..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-session')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSession()">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- View Session -->
+<div class="modal-overlay" id="modal-view-session">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>Session Details</h3>
+      <button class="btn-icon" onclick="closeModal('modal-view-session')">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="view-session-body"></div>
+    <div style="padding:0 24px 20px;">
+      <div style="border-top:1px solid var(--border);padding-top:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">💬 Teacher's Comment</label>
+        <textarea id="view-sess-comment" placeholder="How did the session go? Note student's progress, areas to improve, homework given..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionComment()">Save Comment</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="view-sess-delete">🗑 Delete</button>
+      <button class="btn btn-outline" id="view-sess-edit">✏️ Edit</button>
+      <button class="btn btn-primary" id="view-sess-complete">✓ Mark Complete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const DB_STUDENTS = 'tp_students';
+const DB_SESSIONS = 'tp_sessions';
+const DB_FEES     = 'tp_fees';
+
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+let students = load(DB_STUDENTS);
+let sessions = load(DB_SESSIONS);
+let feeRecords = load(DB_FEES); // { id, studentId, month (YYYY-MM), paid }
+
+// ─────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────
+let currentPage = 'dashboard';
+
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => {
+    const pg = el.dataset.page;
+    navigate(pg);
+    closeSidebar();
+  });
+});
+
+function navigate(pg) {
+  currentPage = pg;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pg).classList.add('active');
+  document.querySelector(`.nav-item[data-page="${pg}"]`).classList.add('active');
+  renderPage(pg);
+}
+
+function renderPage(pg) {
+  if (pg === 'dashboard') renderDashboard();
+  else if (pg === 'students') renderStudents();
+  else if (pg === 'schedule') renderCalendar();
+  else if (pg === 'sessions') renderSessions();
+  else if (pg === 'fees') renderFees();
+  else if (pg === 'lesson-plans') renderLessonPlans();
+}
+
+// ─────────────────────────────────────────────
+// HAMBURGER (mobile)
+// ─────────────────────────────────────────────
+document.getElementById('hamburger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay-bg').classList.toggle('open');
+});
+document.getElementById('overlay-bg').addEventListener('click', closeSidebar);
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay-bg').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function fmt12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  return ((h % 12) || 12) + ':' + m.toString().padStart(2,'0') + ' ' + ampm;
+}
+function fmtDate(d) {
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+}
+function todayStr() {
+  const n = new Date(); return n.getFullYear()+'-'+(n.getMonth()+1).toString().padStart(2,'0')+'-'+n.getDate().toString().padStart(2,'0');
+}
+function monthStr(dt) { return dt.getFullYear()+'-'+(dt.getMonth()+1).toString().padStart(2,'0'); }
+function getStudent(id) { return students.find(s => s.id === id); }
+function getSession(id) { return sessions.find(s => s.id === id); }
+
+const STATUS_COLORS = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb' };
+const STATUS_TEXT   = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706' };
+const STATUS_LABEL  = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed' };
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────
+function renderDashboard() {
+  const today = todayStr();
+  const now = new Date();
+  const greet = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
+  document.querySelector('#page-dashboard .page-header h2').textContent = greet + '! 👋';
+  document.getElementById('dash-date').textContent = now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Stats
+  const todaySess = sessions.filter(s => s.date === today && s.status !== 'cancelled');
+  const monthSess = sessions.filter(s => s.date.startsWith(monthStr(now)) && s.status !== 'cancelled');
+  const monthEarned = monthSess.filter(s => s.status === 'completed').reduce((a, s) => {
+    const st = getStudent(s.studentId);
+    return a + (st && st.feeType === 'session' ? (st.fee || 0) : 0);
+  }, 0);
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Active Students</div><div class="stat-value">${students.length}</div><div class="stat-sub">enrolled</div></div>
+    <div class="stat-card"><div class="stat-label">Today's Sessions</div><div class="stat-value">${todaySess.length}</div><div class="stat-sub">${now.toLocaleDateString('en-IN',{weekday:'long'})}</div></div>
+    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthSess.length}</div><div class="stat-sub">sessions planned</div></div>
+    <div class="stat-card"><div class="stat-label">Earned (${now.toLocaleDateString('en-IN',{month:'short'})})</div><div class="stat-value">₹${monthEarned.toLocaleString('en-IN')}</div><div class="stat-sub">from completed sessions</div></div>
+  `;
+
+  // Today
+  const todayBox = document.getElementById('today-sessions');
+  const tSorted = todaySess.sort((a,b) => a.startTime.localeCompare(b.startTime));
+  if (!tSorted.length) {
+    todayBox.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="icon">📭</div><p>No sessions today</p></div>`;
+  } else {
+    todayBox.innerHTML = tSorted.map(s => {
+      const st = getStudent(s.studentId);
+      return `<div class="today-item">
+        <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
+        <div class="today-time">${fmt12(s.startTime)}</div>
+        <div class="today-info">
+          <div class="today-name">${st?.name||'Unknown'}</div>
+          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
+        </div>
+        <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Upcoming 7 days
+  const upBox = document.getElementById('upcoming-sessions');
+  const nextWeek = new Date(now); nextWeek.setDate(nextWeek.getDate() + 7);
+  const upcoming = sessions.filter(s => s.date > today && s.date <= nextWeek.toISOString().slice(0,10) && s.status === 'scheduled')
+    .sort((a,b) => (a.date+a.startTime).localeCompare(b.date+b.startTime))
+    .slice(0, 8);
+  if (!upcoming.length) {
+    upBox.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="icon">🌿</div><p>No upcoming sessions</p></div>`;
+  } else {
+    upBox.innerHTML = upcoming.map(s => {
+      const st = getStudent(s.studentId);
+      const dt = new Date(s.date + 'T00:00:00');
+      const day = dt.getDate();
+      const mon = dt.toLocaleDateString('en-IN', { month: 'short' });
+      return `<div class="upcoming-item">
+        <div class="upcoming-date-badge">${day}<span>${mon}</span></div>
+        <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${st?.name||'Unknown'}</div>
+          <div style="font-size:12px;color:var(--muted)">${s.subject} · ${fmt12(s.startTime)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ─────────────────────────────────────────────
+// STUDENTS
+// ─────────────────────────────────────────────
+function renderStudents() {
+  const grid = document.getElementById('students-grid');
+  if (!students.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">👥</div><p>No students yet.<br>Add your first student!</p></div>`;
+    return;
+  }
+  grid.innerHTML = students.map(s => {
+    const subs = (s.subjects || '').split(',').map(x => x.trim()).filter(Boolean);
+    const sessCount = sessions.filter(x => x.studentId === s.id && x.date.startsWith(monthStr(new Date()))).length;
+    return `<div class="student-card">
+      <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name.charAt(0).toUpperCase()}</div>
+      <div class="student-name">${s.name}</div>
+      <div class="student-meta">${s.parent ? '👤 ' + s.parent : ''} ${s.phone ? '· 📞 ' + s.phone : ''}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        ${s.grade ? `<span class="badge badge-grade">Grade: ${s.grade}</span>` : ''}
+        <span class="badge badge-subject">${sessCount} sessions this month</span>
+      </div>
+      <div class="student-subjects">
+        ${subs.map(sb => `<span class="badge badge-subject">${sb}</span>`).join('')}
+      </div>
+      ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
+      <div class="student-card-actions">
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270f;&#xfe0f; Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">&#x1f5d1; Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let selectedColor = '#6366f1';
+
+function selectColor(el) {
+  document.querySelectorAll('.color-dot').forEach(d => d.style.border = '2px solid transparent');
+  el.style.border = '3px solid #1e293b';
+  selectedColor = el.dataset.color;
+  document.getElementById('s-color').value = selectedColor;
+}
+
+function openAddStudent() {
+  document.getElementById('modal-student-title').textContent = 'Add Student';
+  document.getElementById('s-id').value = '';
+  document.getElementById('s-name').value = '';
+  document.getElementById('s-grade').value = '';
+  document.getElementById('s-sub-english').checked = false;
+  document.getElementById('s-sub-maths').checked = false;
+  document.getElementById('s-fee').value = '';
+  document.getElementById('s-fee-type').value = 'session';
+  selectedColor = '#6366f1';
+  document.getElementById('s-color').value = selectedColor;
+  document.querySelectorAll('.color-dot').forEach(d => d.style.border = '2px solid transparent');
+  document.querySelector('.color-dot[data-color="#6366f1"]').style.border = '3px solid #1e293b';
+  openModal('modal-student');
+}
+
+function editStudent(id) {
+  const s = getStudent(id);
+  if (!s) return;
+  document.getElementById('modal-student-title').textContent = 'Edit Student';
+  document.getElementById('s-id').value = s.id;
+  document.getElementById('s-name').value = s.name;
+  document.getElementById('s-grade').value = s.grade || '';
+  const subs = (s.subjects || '').split(',').map(x => x.trim());
+  document.getElementById('s-sub-english').checked = subs.includes('English');
+  document.getElementById('s-sub-maths').checked = subs.includes('Maths');
+  document.getElementById('s-fee').value = s.fee || '';
+  document.getElementById('s-fee-type').value = s.feeType || 'session';
+  selectedColor = s.color || '#6366f1';
+  document.getElementById('s-color').value = selectedColor;
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.style.border = d.dataset.color === selectedColor ? '3px solid #1e293b' : '2px solid transparent';
+  });
+  openModal('modal-student');
+}
+
+function saveStudent() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { alert('Student name is required'); return; }
+  const id = document.getElementById('s-id').value;
+  const subsArr = [];
+  if (document.getElementById('s-sub-english').checked) subsArr.push('English');
+  if (document.getElementById('s-sub-maths').checked) subsArr.push('Maths');
+  const data = {
+    id: id || uid(),
+    name,
+    grade: document.getElementById('s-grade').value,
+    subjects: subsArr.join(', '),
+    fee: parseFloat(document.getElementById('s-fee').value) || 0,
+    feeType: document.getElementById('s-fee-type').value,
+    color: document.getElementById('s-color').value || '#6366f1',
+  };
+  if (id) {
+    const i = students.findIndex(s => s.id === id);
+    students[i] = data;
+  } else {
+    students.push(data);
+  }
+  save(DB_STUDENTS, students);
+  closeModal('modal-student');
+  renderStudents();
+  refreshStudentDropdowns();
+  toast(id ? 'Student updated' : 'Student added');
+}
+
+function deleteStudent(id) {
+  if (!confirm('Delete this student and all their sessions?')) return;
+  students = students.filter(s => s.id !== id);
+  sessions = sessions.filter(s => s.studentId !== id);
+  save(DB_STUDENTS, students);
+  save(DB_SESSIONS, sessions);
+  renderStudents();
+  refreshStudentDropdowns();
+  toast('Student deleted');
+}
+
+function refreshStudentDropdowns() {
+  ['sess-student', 'session-filter-student'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = `<option value="">${id === 'sess-student' ? 'Select student...' : 'All Students'}</option>`;
+    students.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.id; o.textContent = s.name;
+      el.appendChild(o);
+    });
+    el.value = cur;
+  });
+}
+
+// ─────────────────────────────────────────────
+// CALENDAR
+// ─────────────────────────────────────────────
+let calDate = new Date();
+
+function changeMonth(delta) {
+  calDate.setMonth(calDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = calDate.getFullYear(), month = calDate.getMonth();
+  document.getElementById('cal-month-label').textContent =
+    new Date(year, month, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const today = todayStr();
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
+
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  let cells = [];
+  // prev month padding
+  for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, type: 'prev' });
+  // this month
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, type: 'cur' });
+  // next month padding
+  let remaining = 42 - cells.length;
+  for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
+
+  cells.forEach(({ day, type }) => {
+    const dateStr = type === 'cur' ? `${year}-${(month+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}` : null;
+    const daySessions = dateStr ? monthSessions.filter(s => s.date === dateStr).sort((a,b) => a.startTime.localeCompare(b.startTime)) : [];
+    const isToday = dateStr === today;
+    const hasSess = daySessions.length > 0;
+    html += `<div class="cal-day${type!=='cur'?' other-month':''}${isToday?' today':''}${hasSess?' has-session':''}"
+      onclick="${dateStr ? `calDayClick('${dateStr}')` : ''}" style="${!dateStr?'cursor:default':''}">
+      <div class="cal-date">${day}</div>
+      ${daySessions.slice(0,2).map(s => {
+        const st = getStudent(s.studentId);
+        const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
+        const lpIcon = s.lessonPlan ? ' 📚' : '';
+        return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
+          onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
+      }).join('')}
+      ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
+    </div>`;
+  });
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function calDayClick(dateStr) {
+  openAddSession(dateStr);
+}
+
+// ─────────────────────────────────────────────
+// SESSIONS
+// ─────────────────────────────────────────────
+function renderSessions() {
+  refreshStudentDropdowns();
+  const filterSt = document.getElementById('session-filter-student').value;
+  const filterStat = document.getElementById('session-filter-status').value;
+  let list = sessions.slice().sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+  if (filterSt) list = list.filter(s => s.studentId === filterSt);
+  if (filterStat) list = list.filter(s => s.status === filterStat);
+  const box = document.getElementById('sessions-list');
+  if (!list.length) {
+    box.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>No sessions found</p></div>`;
+    return;
+  }
+  box.innerHTML = list.map(s => {
+    const st = getStudent(s.studentId);
+    return `<div class="session-item">
+      <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
+      <div class="session-time">${fmtDate(s.date)}<br><span style="font-weight:400;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</span></div>
+      <div class="session-info">
+        <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
+        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
+      </div>
+      <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+      <div class="session-actions">
+        <button class="btn-icon" onclick="viewSession('${s.id}')" title="View">👁</button>
+        <button class="btn-icon" onclick="editSession('${s.id}')" title="Edit">✏️</button>
+        <button class="btn-icon" onclick="deleteSession('${s.id}')" title="Delete">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAddSession(dateStr) {
+  document.getElementById('modal-session-title').textContent = 'Add Session';
+  document.getElementById('sess-id').value = '';
+  document.getElementById('sess-student').value = '';
+  document.getElementById('sess-date').value = dateStr || todayStr();
+  document.getElementById('sess-start').value = '16:00';
+  document.getElementById('sess-end').value = '17:00';
+  document.getElementById('sess-status').value = 'scheduled';
+  document.getElementById('sess-lesson-plan').value = '';
+  document.getElementById('sess-notes').value = '';
+  document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
+  refreshStudentDropdowns();
+  openModal('modal-session');
+}
+
+function editSession(id) {
+  const s = getSession(id);
+  if (!s) return;
+  document.getElementById('modal-session-title').textContent = 'Edit Session';
+  document.getElementById('sess-id').value = s.id;
+  refreshStudentDropdowns();
+  document.getElementById('sess-student').value = s.studentId;
+  document.getElementById('sess-date').value = s.date;
+  document.getElementById('sess-start').value = s.startTime;
+  document.getElementById('sess-end').value = s.endTime;
+  document.getElementById('sess-status').value = s.status;
+  document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
+  document.getElementById('sess-notes').value = s.notes || '';
+  document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
+  openModal('modal-session');
+}
+
+function saveSession() {
+  const studentId = document.getElementById('sess-student').value;
+  const date = document.getElementById('sess-date').value;
+  const start = document.getElementById('sess-start').value;
+  const end = document.getElementById('sess-end').value;
+  if (!studentId || !date || !start || !end) { alert('Please fill all required fields'); return; }
+  const subject = '';
+  if (start >= end) { alert('End time must be after start time'); return; }
+
+  const id = document.getElementById('sess-id').value;
+  const recurDays = Array.from(document.querySelectorAll('.rec-day:checked')).map(c => parseInt(c.value));
+
+  const baseSession = {
+    id: id || uid(),
+    studentId,
+    subject,
+    date,
+    startTime: start,
+    endTime: end,
+    status: document.getElementById('sess-status').value,
+    lessonPlan: document.getElementById('sess-lesson-plan').value.trim(),
+    notes: document.getElementById('sess-notes').value.trim(),
+    comment: id ? (getSession(id)?.comment || '') : '',
+  };
+
+  if (id) {
+    const i = sessions.findIndex(s => s.id === id);
+    sessions[i] = baseSession;
+    toast('Session updated');
+  } else {
+    sessions.push(baseSession);
+    // Recurring
+    if (recurDays.length) {
+      const [y, m] = date.split('-').map(Number);
+      const daysInMonth = new Date(y, m, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dt = new Date(y, m - 1, d);
+        if (recurDays.includes(dt.getDay())) {
+          const ds = `${y}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+          if (ds !== date) {
+            sessions.push({ ...baseSession, id: uid(), date: ds });
+          }
+        }
+      }
+      toast(`Sessions added for ${recurDays.length} day(s) throughout the month`);
+    } else {
+      toast('Session added');
+    }
+  }
+
+  save(DB_SESSIONS, sessions);
+  closeModal('modal-session');
+  renderPage(currentPage);
+}
+
+function deleteSession(id) {
+  if (!confirm('Delete this session?')) return;
+  sessions = sessions.filter(s => s.id !== id);
+  save(DB_SESSIONS, sessions);
+  renderPage(currentPage);
+  closeModal('modal-view-session');
+  toast('Session deleted');
+}
+
+let viewingSessionId = null;
+
+function viewSession(id) {
+  const s = getSession(id);
+  if (!s) return;
+  viewingSessionId = id;
+  const st = getStudent(s.studentId);
+  document.getElementById('view-session-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff">${st?.name?.charAt(0)||'?'}</div>
+      <div>
+        <div style="font-size:17px;font-weight:700">${st?.name||'Unknown'}</div>
+        <div style="font-size:13px;color:var(--muted)">${st?.grade||''} ${st?.subjects ? '· ' + st.subjects : ''}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmtDate(s.date)}</div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
+      <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span></div></div>
+    </div>
+    ${s.lessonPlan ? `
+      <div style="margin-top:14px;">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:5px;">📚 Lesson Plan</div>
+        <div style="padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${s.lessonPlan}</div>
+      </div>` : ''}
+    ${s.notes ? `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted)">📝 ${s.notes}</div>` : ''}
+  `;
+  document.getElementById('view-sess-comment').value = s.comment || '';
+  document.getElementById('view-sess-delete').onclick = () => deleteSession(id);
+  document.getElementById('view-sess-edit').onclick = () => { closeModal('modal-view-session'); editSession(id); };
+  document.getElementById('view-sess-complete').style.display = s.status === 'completed' ? 'none' : '';
+  document.getElementById('view-sess-complete').onclick = () => {
+    const i = sessions.findIndex(x => x.id === id);
+    sessions[i].status = 'completed';
+    save(DB_SESSIONS, sessions);
+    closeModal('modal-view-session');
+    renderPage(currentPage);
+    toast('Marked as completed ✓');
+  };
+  openModal('modal-view-session');
+}
+
+function saveSessionComment() {
+  if (!viewingSessionId) return;
+  const i = sessions.findIndex(x => x.id === viewingSessionId);
+  if (i < 0) return;
+  sessions[i].comment = document.getElementById('view-sess-comment').value.trim();
+  save(DB_SESSIONS, sessions);
+  toast('Comment saved');
+}
+
+// ─────────────────────────────────────────────
+// FEES
+// ─────────────────────────────────────────────
+function renderFees() {
+  const sel = document.getElementById('fee-month-select');
+  // Populate month dropdown (last 6 months + next 2)
+  const now = new Date();
+  const months = [];
+  for (let i = -1; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+    months.push({ val: monthStr(d), label: d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) });
+  }
+  const curVal = sel.value || monthStr(now);
+  sel.innerHTML = months.map(m => `<option value="${m.val}"${m.val===curVal?' selected':''}>${m.label}</option>`).join('');
+  const selectedMonth = sel.value;
+
+  const tbody = document.getElementById('fee-tbody');
+  if (!students.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
+
+  tbody.innerHTML = students.map(s => {
+    const monthSess = sessions.filter(x => x.studentId === s.id && x.date.startsWith(selectedMonth) && x.status !== 'cancelled');
+    const completedSess = monthSess.filter(x => x.status === 'completed');
+    let amount = 0;
+    if (s.feeType === 'monthly') amount = s.fee || 0;
+    else amount = (s.fee || 0) * completedSess.length;
+
+    const feeKey = `${s.id}_${selectedMonth}`;
+    const feeRec = feeRecords.find(f => f.id === feeKey);
+    const paid = feeRec?.paid || false;
+
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:${s.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${s.name.charAt(0)}</div><span style="font-weight:600">${s.name}</span></div></td>
+      <td>${completedSess.length} / ${monthSess.length} done</td>
+      <td>₹${(s.fee||0).toLocaleString('en-IN')} ${s.feeType==='monthly'?'/mo':'/session'}</td>
+      <td style="font-weight:700">₹${amount.toLocaleString('en-IN')}</td>
+      <td><span class="badge ${paid?'badge-success':'badge-warning'}">${paid?'Paid':'Pending'}</span></td>
+      <td><button class="btn btn-sm ${paid?'btn-danger':'btn-primary'}" onclick="togglePaid('${s.id}','${selectedMonth}')">${paid?'Mark Unpaid':'Mark Paid'}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// LESSON PLANS
+// ─────────────────────────────────────────────
+function renderLessonPlans() {
+  // Populate dropdowns
+  const stSel = document.getElementById('lp-filter-student');
+  const mSel  = document.getElementById('lp-filter-month');
+  if (stSel) {
+    const cur = stSel.value;
+    stSel.innerHTML = '<option value="">All Students</option>';
+    students.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; stSel.appendChild(o); });
+    stSel.value = cur;
+  }
+  const now = new Date();
+  if (mSel && !mSel.options.length) {
+    for (let i = -3; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const o = document.createElement('option');
+      o.value = monthStr(d);
+      o.textContent = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      if (monthStr(d) === monthStr(now)) o.selected = true;
+      mSel.appendChild(o);
+    }
+  }
+
+  const filterSt   = document.getElementById('lp-filter-student')?.value || '';
+  const filterSubj = document.getElementById('lp-filter-subject')?.value || '';
+  const filterMon  = document.getElementById('lp-filter-month')?.value || monthStr(now);
+
+  let list = sessions
+    .filter(s => s.date.startsWith(filterMon))
+    .filter(s => !filterSt || s.studentId === filterSt)
+    .filter(s => !filterSubj || s.subject === filterSubj)
+    .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
+
+  const box = document.getElementById('lp-list');
+  if (!list.length) {
+    box.innerHTML = `<div class="empty-state"><div class="icon">📚</div><p>No sessions found for this filter.<br>Add a lesson plan when scheduling a session.</p></div>`;
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  list.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
+
+  box.innerHTML = Object.keys(byDate).sort().map(date => {
+    const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+    const cards = byDate[date].map(s => {
+      const st = getStudent(s.studentId);
+      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
+      return `<div class="lp-card">
+        <div class="lp-card-header">
+          <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
+          <div class="lp-card-meta">
+            <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
+            <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
+          </div>
+          <span class="${subClass}">${s.subject}</span>
+          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
+        </div>
+        <div class="lp-card-body">
+          ${s.lessonPlan
+            ? `<div class="lp-plan-box">${s.lessonPlan}</div>`
+            : `<div class="lp-no-plan">No lesson plan written for this session.</div>`}
+          ${s.comment ? `
+            <div class="lp-comment-box">
+              <div class="lp-comment-label">💬 Teacher's Comment</div>
+              ${s.comment}
+            </div>` : ''}
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270f;&#xfe0f; Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1f4ac; Add Comment</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="lp-month-group">
+      <div class="lp-month-heading">${label}</div>
+      <div class="lp-cards">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
+function togglePaid(studentId, month) {
+  const key = `${studentId}_${month}`;
+  const i = feeRecords.findIndex(f => f.id === key);
+  if (i >= 0) { feeRecords[i].paid = !feeRecords[i].paid; }
+  else { feeRecords.push({ id: key, studentId, month, paid: true }); }
+  save(DB_FEES, feeRecords);
+  renderFees();
+  toast('Fee status updated');
+}
+
+// ─────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ─────────────────────────────────────────────
+// PRINT
+// ─────────────────────────────────────────────
+function printSchedule() { window.print(); }
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+refreshStudentDropdowns();
+renderDashboard();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/Projects/sw.js'));
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('btn-native-install').style.display = 'block';
+});
+
+function openInstallModal() {
+  document.getElementById('install-modal-overlay').classList.add('open');
+}
+function closeInstallModal() {
+  document.getElementById('install-modal-overlay').classList.remove('open');
+}
+async function doNativeInstall() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') { closeInstallModal(); document.getElementById('install-fab').style.display = 'none'; }
+  deferredInstallPrompt = null;
+}
+</script>
+</body>
+</html>
