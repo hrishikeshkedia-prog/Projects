@@ -1,0 +1,19 @@
+{
+  "name": "TuitionPlanner",
+  "short_name": "TuitionPlanner",
+  "description": "Monthly tuition schedule manager",
+  "start_url": "/projects/",
+  "scope": "/projects/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#6366f1",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
