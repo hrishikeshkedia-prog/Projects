@@ -895,10 +895,10 @@ function renderCalendar() {
       <div class="cal-date">${day}</div>
       ${daySessions.slice(0,2).map(s => {
         const st = getStudent(s.studentId);
-        const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
+        const color = st?.color || '#6366f1';
         const lpIcon = s.lessonPlan ? ' 📚' : '';
-        return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
-          onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
+        return `<div class="cal-session" style="background:${color}33;color:${color};border-left:3px solid ${color}"
+          onclick="event.stopPropagation();viewSession('${s.id}')">${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
       ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
     </div>`;
