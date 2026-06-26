@@ -203,21 +203,10 @@
   .hamburger { display: none; padding: 8px; cursor: pointer; font-size: 20px; background: none; border: none; }
   .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.3); z-index: 99; }
   .overlay-bg.open { display: block; }
-  /* Install button */
-  #install-fab { position: fixed; bottom: 20px; right: 20px; z-index: 200; background: var(--primary); color: #fff; border: none; border-radius: 50px; padding: 12px 18px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(99,102,241,.4); display: flex; align-items: center; gap: 8px; }
-  #install-fab:hover { background: var(--primary-dark); }
-  #install-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300; align-items: center; justify-content: center; }
-  #install-modal-overlay.open { display: flex; }
-  #install-modal { background: #fff; border-radius: 16px; padding: 24px; max-width: 360px; width: 90%; }
-  #install-modal h3 { font-size: 18px; margin-bottom: 6px; color: var(--primary); }
-  #install-modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
-  .install-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
-  .install-step-num { background: var(--primary); color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-  .install-step-text { font-size: 14px; line-height: 1.5; }
-  .install-step-text b { color: var(--text); }
-  .install-divider { text-align: center; font-size: 12px; color: var(--muted); margin: 16px 0; font-weight: 600; }
-  #btn-native-install { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px; display: none; }
-  #btn-close-install { width: 100%; padding: 10px; background: var(--bg); color: var(--muted); border: none; border-radius: 10px; font-size: 14px; cursor: pointer; }
+  /* Day detail session rows */
+  .day-sess-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .day-sess-row:last-child { border-bottom: none; }
+  .day-sess-row:hover { background: var(--bg); margin: 0 -8px; padding: 10px 8px; border-radius: 8px; }
 </style>
 </head>
 <body>
@@ -251,7 +240,7 @@
       <span class="nav-icon">📚</span> Lesson Plans
     </div>
   </nav>
-  <div class="sidebar-footer">TuitionPlanner v1.3</div>
+  <div class="sidebar-footer">TuitionPlanner v1.2</div>
 </aside>
 
 <!-- MAIN -->
@@ -298,9 +287,9 @@
       </div>
     </div>
     <div class="calendar-header">
-      <button class="btn-icon" onclick="changeMonth(-1)">◄</button>
+      <button class="btn-icon" onclick="changeMonth(-1)">◀</button>
       <span class="calendar-month" id="cal-month-label"></span>
-      <button class="btn-icon" onclick="changeMonth(1)">►</button>
+      <button class="btn-icon" onclick="changeMonth(1)">▶</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
   </section>
@@ -329,7 +318,7 @@
   <!-- FEES -->
   <section class="page" id="page-fees">
     <div class="page-header">
-      <div><h2>Fee Tracker</h2><p>Fees collected upfront · deductions from prev month's teacher cancellations</p></div>
+      <div><h2>Fee Tracker</h2><p>Monthly payment overview</p></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <select id="fee-month-select" onchange="renderFees()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
       </div>
@@ -363,37 +352,6 @@
 
 </main>
 
-<!-- Install FAB -->
-<button id="install-fab" onclick="openInstallModal()">📲 Install App</button>
-
-<!-- Install Modal -->
-<div id="install-modal-overlay">
-  <div id="install-modal">
-    <h3>📲 Add to Home Screen</h3>
-    <p>Open this app like a normal app from your home screen.</p>
-    <button id="btn-native-install" onclick="doNativeInstall()">Install Now</button>
-    <div id="manual-steps">
-      <div class="install-step">
-        <div class="install-step-num">1</div>
-        <div class="install-step-text">Open this page in <b>Chrome</b> browser</div>
-      </div>
-      <div class="install-step">
-        <div class="install-step-num">2</div>
-        <div class="install-step-text">Tap the <b>three dots ⋮</b> menu at the top right</div>
-      </div>
-      <div class="install-step">
-        <div class="install-step-num">3</div>
-        <div class="install-step-text">Tap <b>"Add to Home screen"</b></div>
-      </div>
-      <div class="install-step">
-        <div class="install-step-num">4</div>
-        <div class="install-step-text">Tap <b>Add</b> — the app icon will appear on your home screen</div>
-      </div>
-    </div>
-    <button id="btn-close-install" onclick="closeInstallModal()">Got it ✓</button>
-  </div>
-</div>
-
 <!-- ── MODALS ── -->
 
 <!-- Add/Edit Student -->
@@ -401,7 +359,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-student-title">Add Student</h3>
-      <button class="btn-icon" onclick="closeModal('modal-student')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-student')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="s-id">
@@ -474,7 +432,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-session-title">Add Session</h3>
-      <button class="btn-icon" onclick="closeModal('modal-session')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-session')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="sess-id">
@@ -554,7 +512,7 @@
   <div class="modal" style="max-width:520px;">
     <div class="modal-header">
       <h3>Session Details</h3>
-      <button class="btn-icon" onclick="closeModal('modal-view-session')">&#x2715;</button>
+      <button class="btn-icon" onclick="closeModal('modal-view-session')">✕</button>
     </div>
     <div class="modal-body" id="view-session-body"></div>
     <div style="padding:0 24px 20px;">
@@ -569,6 +527,21 @@
       <button class="btn btn-outline" id="view-sess-reschedule" style="display:none">↩️ Mark Rescheduled</button>
       <button class="btn btn-outline" id="view-sess-edit">✏️ Edit</button>
       <button class="btn btn-primary" id="view-sess-complete">✓ Mark Complete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Day Detail -->
+<div class="modal-overlay" id="modal-day-detail">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3 id="day-detail-title">Sessions</h3>
+      <button class="btn-icon" onclick="closeModal('modal-day-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="day-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-day-detail')">Close</button>
+      <button class="btn btn-primary" id="day-detail-add-btn">＋ Add Session</button>
     </div>
   </div>
 </div>
@@ -697,7 +670,7 @@ function renderDashboard() {
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
           <div class="today-name">${st?.name||'Unknown'}</div>
-          <div class="today-subj">${s.startTime}–${s.endTime}</div>
+          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
         </div>
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       </div>`;
@@ -723,7 +696,7 @@ function renderDashboard() {
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${st?.name||'Unknown'}</div>
-          <div style="font-size:12px;color:var(--muted)">${fmt12(s.startTime)}</div>
+          <div style="font-size:12px;color:var(--muted)">${s.subject} · ${fmt12(s.startTime)}</div>
         </div>
       </div>`;
     }).join('');
@@ -755,8 +728,8 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;&#xFE0F; Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">&#x1F5D1; Delete</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
       </div>
     </div>`;
   }).join('');
@@ -881,14 +854,17 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
 
   let cells = [];
+  // prev month padding
   for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, type: 'prev' });
+  // this month
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, type: 'cur' });
+  // next month padding
   let remaining = 42 - cells.length;
   for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
 
@@ -900,14 +876,13 @@ function renderCalendar() {
     html += `<div class="cal-day${type!=='cur'?' other-month':''}${isToday?' today':''}${hasSess?' has-session':''}"
       onclick="${dateStr ? `calDayClick('${dateStr}')` : ''}" style="${!dateStr?'cursor:default':''}">
       <div class="cal-date">${day}</div>
-      ${daySessions.slice(0,2).map(s => {
+      ${daySessions.map(s => {
         const st = getStudent(s.studentId);
         const color = st?.color || '#6366f1';
         const lpIcon = s.lessonPlan ? ' 📚' : '';
         return `<div class="cal-session" style="background:${color}33;color:${color};border-left:3px solid ${color}"
           onclick="event.stopPropagation();viewSession('${s.id}')">${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
-      ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
     </div>`;
   });
 
@@ -915,7 +890,28 @@ function renderCalendar() {
 }
 
 function calDayClick(dateStr) {
-  openAddSession(dateStr);
+  const daySessions = sessions.filter(s => s.date === dateStr).sort((a,b) => a.startTime.localeCompare(b.startTime));
+  if (!daySessions.length) {
+    openAddSession(dateStr);
+    return;
+  }
+  const dt = new Date(dateStr + 'T00:00:00');
+  document.getElementById('day-detail-title').textContent =
+    dt.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('day-detail-body').innerHTML = daySessions.map(s => {
+    const st = getStudent(s.studentId);
+    const color = st?.color || '#6366f1';
+    return `<div class="day-sess-row" onclick="closeModal('modal-day-detail');viewSession('${s.id}')">
+      <div style="width:36px;height:36px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:600">${st?.name||'Unknown'}</div>
+        <div style="font-size:12px;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)} · ${st?.grade||''}</div>
+      </div>
+      <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('day-detail-add-btn').onclick = () => { closeModal('modal-day-detail'); openAddSession(dateStr); };
+  openModal('modal-day-detail');
 }
 
 // ─────────────────────────────────────────────
@@ -935,13 +931,12 @@ function renderSessions() {
   }
   box.innerHTML = list.map(s => {
     const st = getStudent(s.studentId);
-    const cancelInfo = s.status === 'cancelled' && s.cancelledBy ? ` · by ${s.cancelledBy === 'tutor' ? 'Teacher' : 'Student'}` : '';
     return `<div class="session-item">
       <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
       <div class="session-time">${fmtDate(s.date)}<br><span style="font-weight:400;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</span></div>
       <div class="session-info">
         <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
-        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}${cancelInfo}</div>
+        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
       </div>
       <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       <div class="session-actions">
@@ -993,6 +988,7 @@ function editSession(id) {
   document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
   document.getElementById('sess-notes').value = s.notes || '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
+  // Restore cancel-by
   const group = document.getElementById('cancel-by-group');
   if (s.status === 'cancelled') {
     group.style.display = '';
@@ -1040,6 +1036,7 @@ function saveSession() {
     toast('Session updated');
   } else {
     sessions.push(baseSession);
+    // Recurring
     if (recurDays.length) {
       const [y, m] = date.split('-').map(Number);
       const daysInMonth = new Date(y, m, 0).getDate();
@@ -1103,6 +1100,7 @@ function viewSession(id) {
   document.getElementById('view-sess-comment').value = s.comment || '';
   document.getElementById('view-sess-delete').onclick = () => deleteSession(id);
   document.getElementById('view-sess-edit').onclick = () => { closeModal('modal-view-session'); editSession(id); };
+  // Reschedule button (only for tutor-cancelled sessions)
   const reschedBtn = document.getElementById('view-sess-reschedule');
   if (s.status === 'cancelled' && s.cancelledBy === 'tutor') {
     reschedBtn.style.display = '';
@@ -1146,6 +1144,7 @@ function markRescheduled(id) {
 // ─────────────────────────────────────────────
 function renderFees() {
   const sel = document.getElementById('fee-month-select');
+  // Populate month dropdown (last 6 months + next 2)
   const now = new Date();
   const months = [];
   for (let i = -1; i <= 6; i++) {
@@ -1156,6 +1155,7 @@ function renderFees() {
   sel.innerHTML = months.map(m => `<option value="${m.val}"${m.val===curVal?' selected':''}>${m.label}</option>`).join('');
   const selectedMonth = sel.value;
 
+  // Previous month (deductions carry from there)
   const [sy, sm] = selectedMonth.split('-').map(Number);
   const prevMonth = monthStr(new Date(sy, sm - 2, 1));
 
@@ -1163,16 +1163,19 @@ function renderFees() {
   if (!students.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
 
   tbody.innerHTML = students.map(s => {
+    // Sessions this month: exclude student-cancelled (tutor keeps that money)
     const plannedSess = sessions.filter(x =>
       x.studentId === s.id &&
       x.date.startsWith(selectedMonth) &&
       !(x.status === 'cancelled' && x.cancelledBy === 'student')
     );
 
+    // Base fee (collected upfront at start of month)
     let baseAmount = s.feeType === 'monthly'
       ? (s.fee || 0)
       : (s.fee || 0) * plannedSess.length;
 
+    // Deductions: tutor-cancelled + unrescheduled sessions from previous month
     const tutorCancelledPrev = sessions.filter(x =>
       x.studentId === s.id &&
       x.date.startsWith(prevMonth) &&
@@ -1186,6 +1189,7 @@ function renderFees() {
       if (s.feeType === 'session') {
         deduction = (s.fee || 0) * tutorCancelledPrev.length;
       } else {
+        // Per-session rate = monthly fee ÷ total planned sessions in prev month
         const prevPlanned = sessions.filter(x =>
           x.studentId === s.id &&
           x.date.startsWith(prevMonth) &&
@@ -1221,6 +1225,7 @@ function renderFees() {
 // LESSON PLANS
 // ─────────────────────────────────────────────
 function renderLessonPlans() {
+  // Populate dropdowns
   const stSel = document.getElementById('lp-filter-student');
   const mSel  = document.getElementById('lp-filter-month');
   if (stSel) {
@@ -1257,6 +1262,7 @@ function renderLessonPlans() {
     return;
   }
 
+  // Group by date
   const byDate = {};
   list.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
 
@@ -1272,7 +1278,7 @@ function renderLessonPlans() {
             <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
             <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
           </div>
-          ${s.subject ? `<span class="${subClass}">${s.subject}</span>` : ''}
+          <span class="${subClass}">${s.subject}</span>
           <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
         </div>
         <div class="lp-card-body">
@@ -1285,8 +1291,8 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;&#xFE0F; Edit Plan</button>
-            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1F4AC; Add Comment</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
           </div>
         </div>
       </div>`;
@@ -1331,27 +1337,6 @@ renderDashboard();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/Projects/sw.js'));
-}
-
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  document.getElementById('btn-native-install').style.display = 'block';
-});
-
-function openInstallModal() {
-  document.getElementById('install-modal-overlay').classList.add('open');
-}
-function closeInstallModal() {
-  document.getElementById('install-modal-overlay').classList.remove('open');
-}
-async function doNativeInstall() {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  if (outcome === 'accepted') { closeInstallModal(); document.getElementById('install-fab').style.display = 'none'; }
-  deferredInstallPrompt = null;
 }
 </script>
 </body>
