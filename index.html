@@ -83,6 +83,7 @@
   .badge-success { background: #dcfce7; color: #166534; }
   .badge-danger { background: #fef2f2; color: #991b1b; }
   .badge-warning { background: #fffbeb; color: #92400e; }
+  .cancel-by-info { font-size: 11px; color: var(--muted); margin-top: 4px; }
   .student-card-actions { display: flex; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
   .student-fee { font-size: 13px; font-weight: 600; color: var(--success); margin-top: 6px; }
 
@@ -250,7 +251,7 @@
       <span class="nav-icon">📚</span> Lesson Plans
     </div>
   </nav>
-  <div class="sidebar-footer">TuitionPlanner v1.2</div>
+  <div class="sidebar-footer">TuitionPlanner v1.3</div>
 </aside>
 
 <!-- MAIN -->
@@ -263,7 +264,7 @@
         <h2>Good morning! 👋</h2>
         <p id="dash-date"></p>
       </div>
-      <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+      <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
     </div>
     <div class="stats-grid" id="stats-grid"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
@@ -282,7 +283,7 @@
   <section class="page" id="page-students">
     <div class="page-header">
       <div><h2>Students</h2><p>Manage your student list</p></div>
-      <button class="btn btn-primary" onclick="openAddStudent()">&#xFF0B; Add Student</button>
+      <button class="btn btn-primary" onclick="openAddStudent()">＋ Add Student</button>
     </div>
     <div class="students-grid" id="students-grid"></div>
   </section>
@@ -293,13 +294,13 @@
       <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="calendar-header">
-      <button class="btn-icon" onclick="changeMonth(-1)">◀</button>
+      <button class="btn-icon" onclick="changeMonth(-1)">◄</button>
       <span class="calendar-month" id="cal-month-label"></span>
-      <button class="btn-icon" onclick="changeMonth(1)">▶</button>
+      <button class="btn-icon" onclick="changeMonth(1)">►</button>
     </div>
     <div class="cal-grid" id="cal-grid"></div>
   </section>
@@ -319,7 +320,7 @@
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="sessions-list" id="sessions-list"></div>
@@ -328,14 +329,14 @@
   <!-- FEES -->
   <section class="page" id="page-fees">
     <div class="page-header">
-      <div><h2>Fee Tracker</h2><p>Monthly payment overview</p></div>
+      <div><h2>Fee Tracker</h2><p>Fees collected upfront · deductions from prev month's teacher cancellations</p></div>
       <div style="display:flex;gap:8px;align-items:center;">
         <select id="fee-month-select" onchange="renderFees()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
       </div>
     </div>
     <table class="fee-table" id="fee-table">
       <thead><tr>
-        <th>Student</th><th>Sessions</th><th>Rate</th><th>Amount Due</th><th>Status</th><th>Action</th>
+        <th>Student</th><th>Sessions</th><th>Base Fee</th><th>Deduction</th><th>Net Due</th><th>Status</th><th>Action</th>
       </tr></thead>
       <tbody id="fee-tbody"></tbody>
     </table>
@@ -382,7 +383,7 @@
       </div>
       <div class="install-step">
         <div class="install-step-num">3</div>
-        <div class="install-step-text">Tap <b>&quot;Add to Home screen&quot;</b></div>
+        <div class="install-step-text">Tap <b>"Add to Home screen"</b></div>
       </div>
       <div class="install-step">
         <div class="install-step-num">4</div>
@@ -497,12 +498,24 @@
       </div>
       <div class="form-group">
         <label>Status</label>
-        <select id="sess-status">
+        <select id="sess-status" onchange="toggleCancelBy()">
           <option value="scheduled">Scheduled</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
+      </div>
+      <div class="form-group" id="cancel-by-group" style="display:none">
+        <label>Cancelled by *</label>
+        <div style="display:flex;gap:20px;margin-top:6px;">
+          <label class="checkbox-item" style="font-size:14px;font-weight:500;cursor:pointer;">
+            <input type="radio" name="sess-cancel-by" id="cancel-by-tutor" value="tutor" style="width:auto;"> Teacher
+          </label>
+          <label class="checkbox-item" style="font-size:14px;font-weight:500;cursor:pointer;">
+            <input type="radio" name="sess-cancel-by" id="cancel-by-student" value="student" style="width:auto;"> Student
+          </label>
+        </div>
+        <div class="cancel-by-info">Teacher cancellations (if unrescheduled) are deducted from next month's fees</div>
       </div>
       <div class="form-group">
         <label>Recurring?</label>
@@ -551,8 +564,9 @@
         <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionComment()">Save Comment</button>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="flex-wrap:wrap;">
       <button class="btn btn-danger" id="view-sess-delete">🗑 Delete</button>
+      <button class="btn btn-outline" id="view-sess-reschedule" style="display:none">↩️ Mark Rescheduled</button>
       <button class="btn btn-outline" id="view-sess-edit">✏️ Edit</button>
       <button class="btn btn-primary" id="view-sess-complete">✓ Mark Complete</button>
     </div>
@@ -574,7 +588,7 @@ function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
 let students = load(DB_STUDENTS);
 let sessions = load(DB_SESSIONS);
-let feeRecords = load(DB_FEES);
+let feeRecords = load(DB_FEES); // { id, studentId, month (YYYY-MM), paid }
 
 // ─────────────────────────────────────────────
 // NAVIGATION
@@ -731,8 +745,9 @@ function renderStudents() {
     return `<div class="student-card">
       <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name.charAt(0).toUpperCase()}</div>
       <div class="student-name">${s.name}</div>
+      <div class="student-meta">${s.parent ? '👤 ' + s.parent : ''} ${s.phone ? '· 📞 ' + s.phone : ''}</div>
       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        ${s.grade ? `<span class="badge badge-grade">${s.grade}</span>` : ''}
+        ${s.grade ? `<span class="badge badge-grade">Grade: ${s.grade}</span>` : ''}
         <span class="badge badge-subject">${sessCount} sessions this month</span>
       </div>
       <div class="student-subjects">
@@ -740,7 +755,7 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;️ Edit</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;&#xFE0F; Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">&#x1F5D1; Delete</button>
       </div>
     </div>`;
@@ -866,7 +881,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -920,12 +935,13 @@ function renderSessions() {
   }
   box.innerHTML = list.map(s => {
     const st = getStudent(s.studentId);
+    const cancelInfo = s.status === 'cancelled' && s.cancelledBy ? ` · by ${s.cancelledBy === 'tutor' ? 'Teacher' : 'Student'}` : '';
     return `<div class="session-item">
       <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
       <div class="session-time">${fmtDate(s.date)}<br><span style="font-weight:400;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</span></div>
       <div class="session-info">
         <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
-        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
+        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}${cancelInfo}</div>
       </div>
       <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       <div class="session-actions">
@@ -935,6 +951,15 @@ function renderSessions() {
       </div>
     </div>`;
   }).join('');
+}
+
+function toggleCancelBy() {
+  const status = document.getElementById('sess-status').value;
+  const group = document.getElementById('cancel-by-group');
+  group.style.display = status === 'cancelled' ? '' : 'none';
+  if (status !== 'cancelled') {
+    document.querySelectorAll('input[name="sess-cancel-by"]').forEach(r => r.checked = false);
+  }
 }
 
 function openAddSession(dateStr) {
@@ -948,6 +973,8 @@ function openAddSession(dateStr) {
   document.getElementById('sess-lesson-plan').value = '';
   document.getElementById('sess-notes').value = '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
+  document.getElementById('cancel-by-group').style.display = 'none';
+  document.querySelectorAll('input[name="sess-cancel-by"]').forEach(r => r.checked = false);
   refreshStudentDropdowns();
   openModal('modal-session');
 }
@@ -966,6 +993,14 @@ function editSession(id) {
   document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
   document.getElementById('sess-notes').value = s.notes || '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
+  const group = document.getElementById('cancel-by-group');
+  if (s.status === 'cancelled') {
+    group.style.display = '';
+    document.querySelectorAll('input[name="sess-cancel-by"]').forEach(r => { r.checked = r.value === (s.cancelledBy || ''); });
+  } else {
+    group.style.display = 'none';
+    document.querySelectorAll('input[name="sess-cancel-by"]').forEach(r => r.checked = false);
+  }
   openModal('modal-session');
 }
 
@@ -980,13 +1015,20 @@ function saveSession() {
   const id = document.getElementById('sess-id').value;
   const recurDays = Array.from(document.querySelectorAll('.rec-day:checked')).map(c => parseInt(c.value));
 
+  const status = document.getElementById('sess-status').value;
+  const cancelledBy = status === 'cancelled'
+    ? (document.querySelector('input[name="sess-cancel-by"]:checked')?.value || null)
+    : null;
   const baseSession = {
     id: id || uid(),
     studentId,
+    subject: '',
     date,
     startTime: start,
     endTime: end,
-    status: document.getElementById('sess-status').value,
+    status,
+    cancelledBy,
+    rescheduled: id ? (getSession(id)?.rescheduled || false) : false,
     lessonPlan: document.getElementById('sess-lesson-plan').value.trim(),
     notes: document.getElementById('sess-notes').value.trim(),
     comment: id ? (getSession(id)?.comment || '') : '',
@@ -1049,6 +1091,7 @@ function viewSession(id) {
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmtDate(s.date)}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
       <div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span></div></div>
+      ${s.status === 'cancelled' ? `<div style="grid-column:1/-1"><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Cancelled by</div><div style="font-size:14px;font-weight:600;margin-top:3px;color:${s.cancelledBy==='tutor'?'#dc2626':'#d97706'}">${s.cancelledBy==='tutor'?'👩‍🏫 Teacher':s.cancelledBy==='student'?'👦 Student':'—'}${s.cancelledBy==='tutor'&&s.rescheduled?' <span style="color:#16a34a;font-size:12px;">(Rescheduled ✓)</span>':''}</div></div>` : ''}
     </div>
     ${s.lessonPlan ? `
       <div style="margin-top:14px;">
@@ -1060,6 +1103,14 @@ function viewSession(id) {
   document.getElementById('view-sess-comment').value = s.comment || '';
   document.getElementById('view-sess-delete').onclick = () => deleteSession(id);
   document.getElementById('view-sess-edit').onclick = () => { closeModal('modal-view-session'); editSession(id); };
+  const reschedBtn = document.getElementById('view-sess-reschedule');
+  if (s.status === 'cancelled' && s.cancelledBy === 'tutor') {
+    reschedBtn.style.display = '';
+    reschedBtn.textContent = s.rescheduled ? '↩️ Unmark Rescheduled' : '↩️ Mark Rescheduled';
+    reschedBtn.onclick = () => markRescheduled(id);
+  } else {
+    reschedBtn.style.display = 'none';
+  }
   document.getElementById('view-sess-complete').style.display = s.status === 'completed' ? 'none' : '';
   document.getElementById('view-sess-complete').onclick = () => {
     const i = sessions.findIndex(x => x.id === id);
@@ -1081,6 +1132,15 @@ function saveSessionComment() {
   toast('Comment saved');
 }
 
+function markRescheduled(id) {
+  const i = sessions.findIndex(x => x.id === id);
+  if (i < 0) return;
+  sessions[i].rescheduled = !sessions[i].rescheduled;
+  save(DB_SESSIONS, sessions);
+  viewSession(id);
+  toast(sessions[i].rescheduled ? 'Marked as rescheduled — no deduction will apply' : 'Unmarked as rescheduled');
+}
+
 // ─────────────────────────────────────────────
 // FEES
 // ─────────────────────────────────────────────
@@ -1096,25 +1156,61 @@ function renderFees() {
   sel.innerHTML = months.map(m => `<option value="${m.val}"${m.val===curVal?' selected':''}>${m.label}</option>`).join('');
   const selectedMonth = sel.value;
 
+  const [sy, sm] = selectedMonth.split('-').map(Number);
+  const prevMonth = monthStr(new Date(sy, sm - 2, 1));
+
   const tbody = document.getElementById('fee-tbody');
-  if (!students.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
+  if (!students.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
 
   tbody.innerHTML = students.map(s => {
-    const monthSess = sessions.filter(x => x.studentId === s.id && x.date.startsWith(selectedMonth) && x.status !== 'cancelled');
-    const completedSess = monthSess.filter(x => x.status === 'completed');
-    let amount = 0;
-    if (s.feeType === 'monthly') amount = s.fee || 0;
-    else amount = (s.fee || 0) * completedSess.length;
+    const plannedSess = sessions.filter(x =>
+      x.studentId === s.id &&
+      x.date.startsWith(selectedMonth) &&
+      !(x.status === 'cancelled' && x.cancelledBy === 'student')
+    );
 
+    let baseAmount = s.feeType === 'monthly'
+      ? (s.fee || 0)
+      : (s.fee || 0) * plannedSess.length;
+
+    const tutorCancelledPrev = sessions.filter(x =>
+      x.studentId === s.id &&
+      x.date.startsWith(prevMonth) &&
+      x.status === 'cancelled' &&
+      x.cancelledBy === 'tutor' &&
+      !x.rescheduled
+    );
+
+    let deduction = 0;
+    if (tutorCancelledPrev.length > 0) {
+      if (s.feeType === 'session') {
+        deduction = (s.fee || 0) * tutorCancelledPrev.length;
+      } else {
+        const prevPlanned = sessions.filter(x =>
+          x.studentId === s.id &&
+          x.date.startsWith(prevMonth) &&
+          !(x.status === 'cancelled' && x.cancelledBy === 'student')
+        );
+        const rate = prevPlanned.length > 0 ? (s.fee || 0) / prevPlanned.length : 0;
+        deduction = rate * tutorCancelledPrev.length;
+      }
+    }
+
+    const netDue = Math.max(0, baseAmount - deduction);
     const feeKey = `${s.id}_${selectedMonth}`;
     const feeRec = feeRecords.find(f => f.id === feeKey);
     const paid = feeRec?.paid || false;
 
+    const deductionHtml = deduction > 0
+      ? `<span style="color:#dc2626;font-weight:700">−₹${Math.round(deduction).toLocaleString('en-IN')}</span><br><span style="font-size:10px;color:var(--muted)">${tutorCancelledPrev.length} class${tutorCancelledPrev.length>1?'es':''} not rescheduled</span>`
+      : `<span style="color:var(--muted);font-size:12px">—</span>`;
+
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:${s.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${s.name.charAt(0)}</div><span style="font-weight:600">${s.name}</span></div></td>
-      <td>${completedSess.length} / ${monthSess.length} done</td>
-      <td>₹${(s.fee||0).toLocaleString('en-IN')} ${s.feeType==='monthly'?'/mo':'/session'}</td>
-      <td style="font-weight:700">₹${amount.toLocaleString('en-IN')}</td>
+      <td>${plannedSess.length} sessions<br><span style="font-size:11px;color:var(--muted)">₹${(s.fee||0).toLocaleString('en-IN')} ${s.feeType==='monthly'?'/mo':'/session'}</span></td>
+      <td style="font-weight:600">₹${Math.round(baseAmount).toLocaleString('en-IN')}</td>
+      <td>${deductionHtml}</td>
+      <td style="font-weight:700;font-size:16px">₹${Math.round(netDue).toLocaleString('en-IN')}</td>
       <td><span class="badge ${paid?'badge-success':'badge-warning'}">${paid?'Paid':'Pending'}</span></td>
       <td><button class="btn btn-sm ${paid?'btn-danger':'btn-primary'}" onclick="togglePaid('${s.id}','${selectedMonth}')">${paid?'Mark Unpaid':'Mark Paid'}</button></td>
     </tr>`;
@@ -1168,6 +1264,7 @@ function renderLessonPlans() {
     const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
     const cards = byDate[date].map(s => {
       const st = getStudent(s.studentId);
+      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
       return `<div class="lp-card">
         <div class="lp-card-header">
           <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
@@ -1175,6 +1272,7 @@ function renderLessonPlans() {
             <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
             <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
           </div>
+          ${s.subject ? `<span class="${subClass}">${s.subject}</span>` : ''}
           <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
         </div>
         <div class="lp-card-body">
@@ -1187,7 +1285,7 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;&#xFE0F; Edit Plan</button>
             <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1F4AC; Add Comment</button>
           </div>
         </div>
