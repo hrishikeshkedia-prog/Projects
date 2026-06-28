@@ -187,6 +187,33 @@
     .page:not(.active) { display: none !important; }
   }
 
+  /* ── Parent Portal ── */
+  #page-portal { display: none; position: fixed; inset: 0; overflow-y: auto; background: #f8fafc; z-index: 500; }
+  .portal-hero { padding: 28px 20px 32px; color: #fff; position: relative; }
+  .portal-hero::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.1); }
+  .portal-hero > * { position: relative; z-index: 1; }
+  .portal-avatar { width: 56px; height: 56px; border-radius: 50%; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 14px; border: 2px solid rgba(255,255,255,.4); }
+  .portal-hero-name { font-size: 24px; font-weight: 800; color: #fff; }
+  .portal-hero-meta { font-size: 14px; color: rgba(255,255,255,.85); margin-top: 5px; }
+  .portal-updated { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 10px; }
+  .portal-body { padding: 16px; max-width: 560px; margin: 0 auto; }
+  .portal-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
+  .portal-card-title { padding: 13px 16px 11px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid #f1f5f9; }
+  .portal-sess-row { padding: 12px 16px; border-bottom: 1px solid #f8fafc; }
+  .portal-sess-row:last-child { border-bottom: none; }
+  .portal-sess-date { font-size: 13px; font-weight: 700; color: #6366f1; }
+  .portal-sess-time { font-size: 12px; color: #64748b; margin-top: 1px; }
+  .portal-lesson-box { background: #f0f9ff; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; color: #0f172a; margin-top: 8px; white-space: pre-wrap; }
+  .portal-comment-box { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; color: #78350f; margin-top: 6px; white-space: pre-wrap; }
+  .portal-fee-row { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f8fafc; }
+  .portal-fee-row:last-child { border-bottom: none; }
+  .portal-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: #f1f5f9; }
+  .portal-stat { background: #fff; text-align: center; padding: 14px 8px; }
+  .portal-stat-val { font-size: 22px; font-weight: 800; }
+  .portal-stat-lbl { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .portal-disclaimer { font-size: 11px; color: #94a3b8; text-align: center; padding: 8px 16px 4px; line-height: 1.6; }
+  .portal-brand { text-align: center; padding: 6px 0 24px; font-size: 13px; color: #94a3b8; font-weight: 500; }
+
   /* ── Mobile ── */
   @media (max-width: 700px) {
     :root { --sidebar-w: 0px; }
@@ -556,6 +583,31 @@
   </div>
 </div>
 
+<!-- Parent Portal (full-screen, shown when ?portal= URL param is present) -->
+<div id="page-portal"><div id="portal-content"></div></div>
+
+<!-- Share Portal Link modal -->
+<div class="modal-overlay" id="modal-portal-link">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>🔗 Share Parent Portal</h3>
+      <button class="btn-icon" onclick="closeModal('modal-portal-link')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Share this link with the parent. They can view class schedule, lesson plans &amp; fee status — no login needed.</p>
+      <div style="display:flex;gap:8px;">
+        <input id="portal-link-input" readonly style="font-size:11px;background:var(--bg);color:var(--muted);">
+        <button class="btn btn-primary" onclick="copyPortalLink()" style="white-space:nowrap;flex-shrink:0;">📋 Copy</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;">⚠️ This is a data snapshot — share a fresh link when you want to send updated info.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-portal-link')">Close</button>
+      <button class="btn btn-primary" onclick="openWhatsAppPortal()">💬 WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -662,6 +714,10 @@ function renderDashboard() {
   // Stats
   const todaySess = sessions.filter(s => s.date === today && s.status !== 'cancelled');
   const monthSess = sessions.filter(s => s.date.startsWith(monthStr(now)) && s.status !== 'cancelled');
+  const monthEarned = monthSess.filter(s => s.status === 'completed').reduce((a, s) => {
+    const st = getStudent(s.studentId);
+    return a + (st && st.feeType === 'session' ? (st.fee || 0) : 0);
+  }, 0);
   document.getElementById('stats-grid').innerHTML = `
     <div class="stat-card"><div class="stat-label">Today's Sessions</div><div class="stat-value">${todaySess.length}</div><div class="stat-sub">${now.toLocaleDateString('en-IN',{weekday:'long'})}</div></div>
     <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthSess.length}</div><div class="stat-sub">sessions planned</div></div>
@@ -743,6 +799,7 @@ function renderStudents() {
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
         <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
+        <button class="btn btn-outline btn-sm" onclick="sharePortal('${s.id}')" title="Share read-only portal with parent">🔗 Portal</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
       </div>
     </div>`;
@@ -1059,7 +1116,9 @@ function saveSession() {
         const dt = new Date(y, m - 1, d);
         if (recurDays.includes(dt.getDay())) {
           const ds = `${y}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-          if (ds !== date) sessions.push({ ...baseSession, id: uid(), date: ds });
+          if (ds !== date) {
+            sessions.push({ ...baseSession, id: uid(), date: ds });
+          }
         }
       }
       toast(`Sessions added for ${recurDays.length} day(s) throughout the month`);
@@ -1095,7 +1154,6 @@ function viewSession(id) {
       <div>
         <div style="font-size:17px;font-weight:700">${st?.name||'Unknown'}</div>
         <div style="font-size:13px;color:var(--muted)">${st?.grade||''} ${st?.subjects ? '· ' + st.subjects : ''}</div>
-        ${st?.phone ? `<a href="tel:${st.phone}" style="font-size:13px;color:var(--primary);text-decoration:none;font-weight:500;">📞 ${st.phone}${st.parent ? ' (' + st.parent + ')' : ''}</a>` : ''}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1320,6 +1378,160 @@ function togglePaid(studentId, month) {
 }
 
 // ─────────────────────────────────────────────
+// PARENT PORTAL
+// ─────────────────────────────────────────────
+function sharePortal(studentId) {
+  const s = getStudent(studentId);
+  if (!s) return;
+  const now = new Date();
+  const curMonth = monthStr(now);
+  const cutoff = monthStr(new Date(now.getFullYear(), now.getMonth() - 2, 1));
+  const future = monthStr(new Date(now.getFullYear(), now.getMonth() + 3, 1));
+
+  const portalSessions = sessions
+    .filter(x => x.studentId === studentId && x.date >= cutoff && x.date < future)
+    .map(x => ({ date: x.date, startTime: x.startTime, endTime: x.endTime, status: x.status, lessonPlan: x.lessonPlan || '', comment: x.comment || '' }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const plannedThisMonth = sessions.filter(x =>
+    x.studentId === studentId && x.date.startsWith(curMonth) &&
+    !(x.status === 'cancelled' && x.cancelledBy === 'student')
+  ).length;
+
+  const feeRec = feeRecords.find(f => f.id === `${studentId}_${curMonth}`);
+
+  const payload = {
+    v: 1,
+    student: { name: s.name, grade: s.grade || '', subjects: s.subjects || '', color: s.color || '#6366f1', parent: s.parent || '' },
+    sessions: portalSessions,
+    fees: { fee: s.fee || 0, feeType: s.feeType || 'session', currentMonth: curMonth, paid: feeRec?.paid || false, sessionsThisMonth: plannedThisMonth },
+    generatedAt: now.toISOString(),
+  };
+
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = location.origin + location.pathname + '?portal=' + encoded;
+  document.getElementById('portal-link-input').value = url;
+  openModal('modal-portal-link');
+}
+
+function copyPortalLink() {
+  const v = document.getElementById('portal-link-input').value;
+  navigator.clipboard?.writeText(v).then(() => toast('Link copied! 📋')).catch(() => {
+    document.getElementById('portal-link-input').select();
+    document.execCommand('copy');
+    toast('Link copied! 📋');
+  });
+}
+
+function openWhatsAppPortal() {
+  const url = document.getElementById('portal-link-input').value;
+  window.open('https://wa.me/?text=' + encodeURIComponent('📚 View your child\'s tuition progress: ' + url), '_blank');
+}
+
+function initPortalMode() {
+  const param = new URLSearchParams(location.search).get('portal');
+  if (!param) return false;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(param))));
+    ['sidebar','hamburger','overlay-bg'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    document.getElementById('main').style.display = 'none';
+    document.getElementById('page-portal').style.display = 'block';
+    renderPortalPage(data);
+  } catch(_) {
+    document.getElementById('page-portal').style.display = 'block';
+    document.getElementById('portal-content').innerHTML = `<div style="text-align:center;padding:60px 20px;color:#64748b;"><div style="font-size:48px;margin-bottom:16px;">⚠️</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">Invalid or Expired Link</div><div style="font-size:14px;">Please ask your tutor to share a fresh portal link.</div></div>`;
+  }
+  return true;
+}
+
+function renderPortalPage(data) {
+  const s = data.student || {};
+  const today = todayStr();
+  const allSess = data.sessions || [];
+
+  const upcoming = allSess.filter(x => x.date >= today && (x.status === 'scheduled' || x.status === 'completed'))
+    .sort((a,b) => a.date.localeCompare(b.date)).slice(0,12);
+  const past = allSess.filter(x => x.date < today && x.status === 'completed')
+    .sort((a,b) => b.date.localeCompare(a.date)).slice(0,20);
+  const completedCount = allSess.filter(x => x.status === 'completed').length;
+  const cancelledCount = allSess.filter(x => x.status === 'cancelled').length;
+
+  const fees = data.fees || {};
+  const monthFee = fees.feeType === 'monthly' ? fees.fee : (fees.fee || 0) * (fees.sessionsThisMonth || 0);
+  const feeMonthLabel = fees.currentMonth
+    ? new Date(fees.currentMonth + '-01').toLocaleDateString('en-IN', { month:'long', year:'numeric' })
+    : '';
+  const genDate = data.generatedAt
+    ? new Date(data.generatedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : '';
+
+  const upcomingHtml = upcoming.length ? upcoming.map(x => {
+    const dt = new Date(x.date + 'T00:00:00');
+    const lbl = x.date === today ? '📍 Today' : dt.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+    return `<div class="portal-sess-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="portal-sess-date">${lbl}</div><div class="portal-sess-time">${fmt12(x.startTime)} – ${fmt12(x.endTime)}</div></div>
+        <span class="badge" style="background:${STATUS_COLORS[x.status]};color:${STATUS_TEXT[x.status]}">${STATUS_LABEL[x.status]}</span>
+      </div>
+    </div>`;
+  }).join('') : `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">No upcoming classes</div>`;
+
+  const pastHtml = past.length ? past.map(x => {
+    const dt = new Date(x.date + 'T00:00:00');
+    const lbl = dt.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+    return `<div class="portal-sess-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x.lessonPlan||x.comment?'8px':'0'}">
+        <div><div class="portal-sess-date">${lbl}</div><div class="portal-sess-time">${fmt12(x.startTime)} – ${fmt12(x.endTime)}</div></div>
+        <span class="badge badge-success">Completed</span>
+      </div>
+      ${x.lessonPlan ? `<div class="portal-lesson-box">📚 ${x.lessonPlan}</div>` : ''}
+      ${x.comment ? `<div class="portal-comment-box">💬 <strong>Teacher:</strong> ${x.comment}</div>` : ''}
+    </div>`;
+  }).join('') : `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">No completed sessions yet</div>`;
+
+  const feeHtml = fees.fee ? `
+    <div class="portal-fee-row"><span style="font-size:13px;color:#64748b">${feeMonthLabel} Fee</span><span style="font-size:17px;font-weight:800;">₹${Math.round(monthFee).toLocaleString('en-IN')}</span></div>
+    <div class="portal-fee-row"><span style="font-size:13px;color:#64748b">Payment Status</span><span class="badge ${fees.paid?'badge-success':'badge-warning'}" style="font-size:13px;padding:4px 12px;">${fees.paid?'✓ Paid':'⏳ Pending'}</span></div>
+    ${fees.feeType === 'session' ? `<div class="portal-fee-row"><span style="font-size:12px;color:#94a3b8">₹${fees.fee}/session × ${fees.sessionsThisMonth} sessions this month</span></div>` : ''}
+  ` : `<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Fee info not set</div>`;
+
+  document.getElementById('portal-content').innerHTML = `
+    <div>
+      <div class="portal-hero" style="background:${s.color||'#6366f1'}">
+        <div class="portal-avatar">${(s.name||'?').charAt(0).toUpperCase()}</div>
+        <div class="portal-hero-name">${s.name||'Student'}</div>
+        <div class="portal-hero-meta">${[s.grade, s.subjects].filter(Boolean).join(' · ')}</div>
+        ${genDate ? `<div class="portal-updated">Shared: ${genDate}</div>` : ''}
+      </div>
+      <div class="portal-body">
+        <div class="portal-card">
+          <div class="portal-card-title">📊 Overview</div>
+          <div class="portal-stats">
+            <div class="portal-stat"><div class="portal-stat-val" style="color:#6366f1">${completedCount}</div><div class="portal-stat-lbl">Completed</div></div>
+            <div class="portal-stat"><div class="portal-stat-val" style="color:#f59e0b">${upcoming.length}</div><div class="portal-stat-lbl">Upcoming</div></div>
+            <div class="portal-stat"><div class="portal-stat-val" style="color:#ef4444">${cancelledCount}</div><div class="portal-stat-lbl">Cancelled</div></div>
+          </div>
+        </div>
+        <div class="portal-card">
+          <div class="portal-card-title">📅 Upcoming Classes</div>
+          ${upcomingHtml}
+        </div>
+        <div class="portal-card">
+          <div class="portal-card-title">📚 Topics Covered</div>
+          ${pastHtml}
+        </div>
+        <div class="portal-card">
+          <div class="portal-card-title">💰 Fee Status</div>
+          ${feeHtml}
+        </div>
+        <div class="portal-disclaimer">Read-only view shared by your child's tutor.<br>Contact your tutor for queries or changes.</div>
+        <div class="portal-brand">✏️ TuitionPlanner</div>
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
 // MODAL HELPERS
 // ─────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
@@ -1337,8 +1549,10 @@ function printSchedule() { window.print(); }
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
-refreshStudentDropdowns();
-renderDashboard();
+if (!initPortalMode()) {
+  refreshStudentDropdowns();
+  renderDashboard();
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/Projects/sw.js'));
