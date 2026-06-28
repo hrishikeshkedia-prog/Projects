@@ -4,161 +4,173 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TuitionPlanner – Monthly Schedule</title>
-<link rel="manifest" href="/Projects/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6366f1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="TuitionPlanner">
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
   :root {
-    --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #eef2ff;
-    --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
-    --bg: #f8fafc; --surface: #fff; --border: #e2e8f0;
-    --text: #1e293b; --muted: #64748b; --subtle: #94a3b8;
-    --radius: 12px; --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --primary: #6366f1;
+    --primary-light: #eef2ff;
+    --primary-dark: #4f46e5;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --sidebar-w: 220px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
 
   /* ── Sidebar ── */
-  .sidebar { width: 220px; min-height: 100vh; background: #1e293b; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 200; transition: transform .25s; }
-  .sidebar-logo { padding: 20px 16px 12px; font-size: 18px; font-weight: 800; color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 8px; }
-  .sidebar-logo span { font-size: 13px; color: rgba(255,255,255,.5); font-weight: 500; }
-  .sidebar-nav { flex: 1; padding: 10px 8px; overflow-y: auto; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,.7); font-size: 14px; cursor: pointer; transition: all .15s; margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left; }
-  .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
-  .nav-item.active { background: var(--primary); color: #fff; }
-  .nav-item .nav-icon { font-size: 18px; width: 22px; text-align: center; }
-  .sidebar-footer { padding: 12px 8px 20px; border-top: 1px solid rgba(255,255,255,.08); }
+  #sidebar {
+    width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100;
+  }
+  .sidebar-logo { padding: 20px 18px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-logo h1 { font-size: 17px; font-weight: 700; color: var(--primary); }
+  .sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 12px 10px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); margin-bottom: 3px; transition: all .15s; }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .nav-icon { font-size: 17px; width: 22px; text-align: center; }
+  .sidebar-footer { padding: 10px 10px 16px; border-top: 1px solid var(--border); }
 
   /* ── Hamburger ── */
-  .hamburger { display: none; position: fixed; top: 14px; left: 14px; z-index: 300; background: #1e293b; border: none; border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 18px; color: #fff; }
-  .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 150; }
+  .hamburger { display: none; position: fixed; top: 12px; left: 12px; z-index: 200; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; cursor: pointer; font-size: 18px; box-shadow: var(--shadow,0 1px 3px rgba(0,0,0,.08)); }
+  .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 99; }
 
   /* ── Main ── */
-  #main { margin-left: 220px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
-  .page { display: none; padding: 24px; flex: 1; }
+  #main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+  .page { display: none; padding: 24px; }
   .page.active { display: block; }
   .page-header { margin-bottom: 20px; }
-  .page-title { font-size: 22px; font-weight: 800; }
-  .page-sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
 
   /* ── Cards ── */
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; }
 
   /* ── Buttons ── */
-  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: var(--primary-dark); }
-  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; transition: all .15s; text-decoration: none; }
+  .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+  .btn-outline { background: var(--surface); color: var(--text); border-color: var(--border); }
   .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-  .btn-danger { background: #fef2f2; color: var(--danger); border: 1.5px solid #fecaca; }
+  .btn-danger  { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
   .btn-danger:hover { background: #fee2e2; }
-  .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
-  .btn-icon { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 6px; border-radius: 6px; color: var(--muted); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { background: none; border: none; cursor: pointer; font-size: 17px; padding: 4px; color: var(--muted); border-radius: 6px; }
   .btn-icon:hover { background: var(--bg); }
 
   /* ── Form ── */
   .form-group { margin-bottom: 14px; }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .4px; }
-  input, select, textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; background: var(--surface); color: var(--text); transition: border .15s; font-family: inherit; }
+  label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .4px; }
+  input, select, textarea { width: 100%; padding: 8px 11px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--surface); color: var(--text); transition: border .15s; font-family: inherit; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
-  textarea { resize: vertical; min-height: 72px; }
+  textarea { resize: vertical; min-height: 68px; }
 
   /* ── Badge ── */
-  .badge { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
   .badge-success { background: #dcfce7; color: #166534; }
   .badge-warning { background: #fffbeb; color: #92400e; }
   .badge-danger  { background: #fef2f2; color: #991b1b; }
   .badge-info    { background: #eff6ff; color: #1e40af; }
 
   /* ── Modal ── */
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
   .modal-overlay.open { display: flex; }
-  .modal { background: #fff; border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
-  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff; z-index: 1; }
-  .modal-header h3 { font-size: 17px; font-weight: 700; }
-  .modal-body { padding: 20px; }
-  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.18); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-header h3 { font-size: 16px; font-weight: 700; }
+  .modal-body { padding: 18px; }
+  .modal-footer { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; }
 
   /* ── Toast ── */
-  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 9999; white-space: nowrap; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; padding: 9px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 9999; white-space: nowrap; }
   #toast.show { opacity: 1; }
 
-  /* ── Dashboard ── */
-  .dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-  .stat-val { font-size: 28px; font-weight: 800; }
-  .stat-lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  /* ── Dashboard stats ── */
+  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat-val { font-size: 26px; font-weight: 800; color: var(--primary); }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  .session-item { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+  /* ── Session list ── */
+  .session-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
   .session-item:last-child { border-bottom: none; }
-  .session-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
-  .session-info { flex: 1; }
-  .session-title { font-size: 14px; font-weight: 600; }
-  .session-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .session-time { font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+  .session-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .session-info { flex: 1; min-width: 0; }
+  .session-name { font-size: 14px; font-weight: 600; }
+  .session-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .session-right { text-align: right; flex-shrink: 0; }
+  .session-time  { font-size: 12px; color: var(--muted); }
 
-  /* ── Week View ── */
-  .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; }
-  .week-day { text-align: center; }
-  .week-day-name { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-  .week-day-num { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; margin: 0 auto 6px; cursor: pointer; transition: all .15s; }
-  .week-day-num.today { background: var(--primary); color: #fff; }
-  .week-day-num.has-session { border: 2px solid var(--primary); color: var(--primary); }
-  .week-day-num:hover { background: var(--primary-light); }
-  .week-sess-dot { width: 6px; height: 6px; border-radius: 50%; margin: 2px auto; }
+  /* ── Week mini-calendar ── */
+  .week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+  .week-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .week-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; }
+  .week-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .week-num.today { background: var(--primary); color: #fff; }
+  .week-num.has-sess { background: var(--primary-light); color: var(--primary); }
+  .week-num:hover { background: var(--primary-light); color: var(--primary); }
+  .week-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; }
+  .week-dot { width: 5px; height: 5px; border-radius: 50%; }
 
-  /* ── Students ── */
-  .students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px; }
-  .student-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-  .student-card-header { padding: 14px 16px 10px; display: flex; align-items: center; gap: 12px; }
-  .student-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0; }
-  .student-name { font-size: 16px; font-weight: 700; }
+  /* ── Students grid ── */
+  .students-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(260px,1fr)); gap: 14px; }
+  .student-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .student-card-top { padding: 14px 16px 10px; display: flex; align-items: center; gap: 12px; }
+  .student-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .student-name { font-size: 15px; font-weight: 700; }
   .student-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .student-card-body { padding: 0 16px 12px; }
+  .student-card-mid { padding: 0 16px 12px; }
   .student-card-actions { display: flex; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--border); }
 
-  /* ── Schedule ── */
-  .sched-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  /* ── Schedule table ── */
+  .sched-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
   .sched-table { width: 100%; border-collapse: collapse; }
-  .sched-table th { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--border); text-align: left; }
-  .sched-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  .sched-table th { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .sched-table td { padding: 10px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .sched-table tr:last-child td { border-bottom: none; }
   .sched-table tr:hover td { background: var(--bg); }
-  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
 
-  /* ── Fees ── */
-  .fee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; }
-  .fee-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-  .fee-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-  .fee-amount { font-size: 22px; font-weight: 800; margin: 8px 0 4px; }
-  .fee-detail { font-size: 12px; color: var(--muted); }
+  /* ── Fee cards ── */
+  .fee-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap: 12px; }
+  .fee-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .fee-name { font-weight: 700; font-size: 15px; }
+  .fee-amount { font-size: 22px; font-weight: 800; margin: 6px 0 2px; }
+  .fee-detail { font-size: 11px; color: var(--muted); }
 
-  /* ── Color Picker ── */
-  .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-  .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; transition: all .15s; }
-  .color-swatch.selected { border-color: #1e293b; transform: scale(1.15); }
+  /* ── Colour swatches ── */
+  .color-swatches { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; transition: transform .1s; }
+  .color-swatch.sel { border-color: #1e293b; transform: scale(1.2); }
 
   /* ── Mobile ── */
-  @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
+  @media(max-width:768px) {
+    #sidebar { transform: translateX(-100%); transition: transform .25s; z-index: 150; }
+    #sidebar.open { transform: none; }
     .overlay-bg.open { display: block; }
-    .hamburger { display: flex; }
+    .hamburger { display: block; }
     #main { margin-left: 0; }
-    .page { padding: 16px; padding-top: 56px; }
-    .dash-stats { grid-template-columns: repeat(2,1fr); }
-    .form-row { grid-template-columns: 1fr; }
-    .week-grid { gap: 3px; }
-    .week-day-num { width: 28px; height: 28px; font-size: 11px; }
-    .sched-controls { gap: 6px; }
-  }
-  @media (max-width: 480px) {
+    .page { padding: 14px; padding-top: 52px; }
     .dash-stats { grid-template-columns: repeat(2,1fr); gap: 8px; }
+    .form-row { grid-template-columns: 1fr; }
+    .week-num { width: 26px; height: 26px; font-size: 11px; }
+  }
+  @media(max-width:480px) {
     .students-grid { grid-template-columns: 1fr; }
+    .fee-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -167,144 +179,139 @@
 <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
 <div class="overlay-bg" id="overlay-bg" onclick="closeSidebar()"></div>
 
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-logo">✏️ <div><div>TuitionPlanner</div><span>Tutor Dashboard</span></div></div>
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>✏️ TuitionPlanner</h1>
+    <p>Tutor Dashboard</p>
+  </div>
   <div class="sidebar-nav">
-    <button class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard"><span class="nav-icon">🏠</span> Dashboard</button>
-    <button class="nav-item" onclick="navigate('students')"  id="nav-students"><span class="nav-icon">👥</span> Students</button>
-    <button class="nav-item" onclick="navigate('schedule')"  id="nav-schedule"><span class="nav-icon">📅</span> Schedule</button>
-    <button class="nav-item" onclick="navigate('fees')"      id="nav-fees"><span class="nav-icon">💰</span> Fees</button>
+    <div class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+    <div class="nav-item" id="nav-students"  onclick="navigate('students')"> <span class="nav-icon">👥</span> Students</div>
+    <div class="nav-item" id="nav-schedule"  onclick="navigate('schedule')"> <span class="nav-icon">📅</span> Schedule</div>
+    <div class="nav-item" id="nav-fees"      onclick="navigate('fees')">     <span class="nav-icon">💰</span> Fees</div>
   </div>
   <div class="sidebar-footer">
-    <button class="nav-item" onclick="printSchedule()"><span class="nav-icon">🖨️</span> Print</button>
+    <div class="nav-item" onclick="window.print()"><span class="nav-icon">🖨️</span> Print</div>
   </div>
 </nav>
 
 <div id="main">
-  <!-- Dashboard -->
+
+  <!-- ── Dashboard ── -->
   <div class="page active" id="page-dashboard">
     <div class="page-header">
-      <div class="page-title" id="dash-date-title">Dashboard</div>
-      <div class="page-sub" id="dash-date-sub"></div>
+      <div class="page-title" id="dash-title">Dashboard</div>
+      <div class="page-sub"  id="dash-sub"></div>
     </div>
     <div class="dash-stats">
-      <div class="stat-card"><div class="stat-val" id="stat-today">0</div><div class="stat-lbl">Today's Classes</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-week">0</div><div class="stat-lbl">This Week</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-students">0</div><div class="stat-lbl">Students</div></div>
-      <div class="stat-card"><div class="stat-val" id="stat-month-sessions">0</div><div class="stat-lbl">This Month</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-today">0</div><div class="stat-lbl">Today's classes</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-week">0</div> <div class="stat-lbl">This week</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-stu">0</div>  <div class="stat-lbl">Students</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-mon">0</div>  <div class="stat-lbl">This month</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div class="card-title" style="margin-bottom:0">📅 Week View</div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="prevWeek()">‹</button>
-            <button class="btn btn-outline btn-sm" onclick="nextWeek()">›</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0">📅 Week</div>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-outline btn-sm" onclick="weekOff--;renderDash()">‹</button>
+            <button class="btn btn-outline btn-sm" onclick="weekOff++;renderDash()">›</button>
           </div>
         </div>
         <div id="week-grid" class="week-grid"></div>
       </div>
       <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div class="card-title" style="margin-bottom:0">📍 Today's Sessions</div>
-          <button class="btn btn-primary btn-sm" onclick="openAddSessionModal()">+ Add</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0">📍 Today's Sessions</div>
+          <button class="btn btn-primary btn-sm" onclick="openSessModal()">+ Add</button>
         </div>
-        <div id="today-sessions"></div>
+        <div id="today-list"></div>
       </div>
     </div>
   </div>
 
-  <!-- Students -->
+  <!-- ── Students ── -->
   <div class="page" id="page-students">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div class="page-title">Students</div><div class="page-sub" id="students-count"></div></div>
-      <button class="btn btn-primary" onclick="openAddStudentModal()">+ Add Student</button>
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div class="page-title">Students</div><div class="page-sub" id="stu-count"></div></div>
+      <button class="btn btn-primary" onclick="openStuModal()">+ Add Student</button>
     </div>
-    <div id="students-grid" class="students-grid"></div>
+    <div id="stu-grid" class="students-grid"></div>
   </div>
 
-  <!-- Schedule -->
+  <!-- ── Schedule ── -->
   <div class="page" id="page-schedule">
-    <div class="page-header">
-      <div class="page-title">Schedule</div>
-    </div>
+    <div class="page-header"><div class="page-title">Schedule</div></div>
     <div class="card">
       <div class="sched-controls">
-        <select id="filter-student" onchange="renderSchedule()" style="width:auto;min-width:160px;"></select>
-        <select id="filter-month" onchange="renderSchedule()" style="width:auto;min-width:140px;"></select>
-        <select id="filter-status" onchange="renderSchedule()" style="width:auto;min-width:130px;">
+        <select id="f-stu" onchange="renderSched()" style="min-width:150px;width:auto;"></select>
+        <select id="f-mon" onchange="renderSched()" style="min-width:130px;width:auto;"></select>
+        <select id="f-sta" onchange="renderSched()" style="min-width:120px;width:auto;">
           <option value="">All Status</option>
           <option value="scheduled">Scheduled</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary btn-sm" onclick="openAddSessionModal()">+ Session</button>
+        <button class="btn btn-primary btn-sm" onclick="openSessModal()">+ Session</button>
       </div>
       <div style="overflow-x:auto;">
         <table class="sched-table">
-          <thead><tr><th>Date</th><th>Student</th><th>Time</th><th>Subject</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="sched-tbody"></tbody>
+          <thead><tr><th>Date</th><th>Student</th><th>Time</th><th>Subject</th><th>Status</th><th></th></tr></thead>
+          <tbody id="sched-body"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- Fees -->
+  <!-- ── Fees ── -->
   <div class="page" id="page-fees">
-    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-      <div><div class="page-title">Fees</div><div class="page-sub" id="fees-month-label"></div></div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-outline btn-sm" onclick="prevFeeMonth()">‹</button>
-        <button class="btn btn-outline btn-sm" onclick="nextFeeMonth()">›</button>
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div class="page-title">Fees</div><div class="page-sub" id="fee-month-lbl"></div></div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-outline btn-sm" onclick="feeOff--;renderFees()">‹</button>
+        <button class="btn btn-outline btn-sm" onclick="feeOff++;renderFees()">›</button>
       </div>
     </div>
-    <div id="fee-summary" style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;"></div>
-    <div id="fees-grid" class="fee-grid"></div>
+    <div id="fee-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
+    <div id="fee-grid" class="fee-grid"></div>
   </div>
-</div>
 
-<!-- Add/Edit Student Modal -->
-<div class="modal-overlay" id="modal-student">
+</div><!-- #main -->
+
+<!-- ══ MODALS ══ -->
+
+<!-- Student modal -->
+<div class="modal-overlay" id="m-student">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="modal-student-title">Add Student</h3>
-      <button class="btn-icon" onclick="closeModal('modal-student')">✕</button>
+      <h3 id="m-stu-title">Add Student</h3>
+      <button class="btn-icon" onclick="closeModal('m-student')">✕</button>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="student-id">
+      <input type="hidden" id="stu-id">
       <div class="form-row">
-        <div class="form-group">
-          <label>Student Name *</label>
-          <input id="s-name" placeholder="e.g. Aryan Sharma">
-        </div>
-        <div class="form-group">
-          <label>Grade / Class</label>
-          <input id="s-grade" placeholder="e.g. Grade 9">
+        <div class="form-group"><label>Name *</label><input id="stu-name" placeholder="e.g. Aryan Sharma"></div>
+        <div class="form-group"><label>Grade</label>
+          <select id="stu-grade">
+            <option value="">— Select grade —</option>
+            <option>Nursery</option><option>Jr. KG</option><option>Sr. KG</option>
+            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+          </select>
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Parent / Guardian Name</label>
-          <input id="s-parent" placeholder="e.g. Ramesh Sharma">
-        </div>
-        <div class="form-group">
-          <label>Parent Phone</label>
-          <input id="s-phone" placeholder="e.g. 9876543210" type="tel">
-        </div>
+        <div class="form-group"><label>Parent / Guardian</label><input id="stu-parent" placeholder="e.g. Ramesh Sharma"></div>
+        <div class="form-group"><label>Parent Phone</label><input id="stu-phone" type="tel" placeholder="e.g. 9876543210"></div>
       </div>
-      <div class="form-group">
-        <label>Subjects</label>
-        <input id="s-subjects" placeholder="e.g. Math, Physics">
-      </div>
+      <div class="form-group"><label>Subjects</label><input id="stu-subj" placeholder="e.g. Maths, Science"></div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Fee Amount (₹)</label>
-          <input id="s-fee" type="number" placeholder="e.g. 500">
-        </div>
-        <div class="form-group">
-          <label>Fee Type</label>
-          <select id="s-fee-type">
+        <div class="form-group"><label>Fee (₹)</label><input id="stu-fee" type="number" placeholder="500"></div>
+        <div class="form-group"><label>Fee Type</label>
+          <select id="stu-fee-type">
             <option value="session">Per Session</option>
             <option value="monthly">Monthly</option>
           </select>
@@ -312,703 +319,477 @@
       </div>
       <div class="form-group">
         <label>Colour</label>
-        <div class="color-swatches" id="color-swatches"></div>
+        <div id="color-swatches" class="color-swatches" style="margin-top:6px;"></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-student')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveStudent()">Save Student</button>
+      <button class="btn btn-outline" onclick="closeModal('m-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStu()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Add/Edit Session Modal -->
-<div class="modal-overlay" id="modal-session">
+<!-- Session modal -->
+<div class="modal-overlay" id="m-session">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="modal-session-title">Add Session</h3>
-      <button class="btn-icon" onclick="closeModal('modal-session')">✕</button>
+      <h3 id="m-sess-title">Add Session</h3>
+      <button class="btn-icon" onclick="closeModal('m-session')">✕</button>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="session-id">
+      <input type="hidden" id="sess-id">
       <div class="form-row">
-        <div class="form-group">
-          <label>Student *</label>
-          <select id="sess-student"></select>
-        </div>
-        <div class="form-group">
-          <label>Date *</label>
-          <input id="sess-date" type="date">
-        </div>
+        <div class="form-group"><label>Student *</label><select id="sess-stu"></select></div>
+        <div class="form-group"><label>Date *</label><input id="sess-date" type="date"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Start Time</label>
-          <input id="sess-start" type="time">
-        </div>
-        <div class="form-group">
-          <label>End Time</label>
-          <input id="sess-end" type="time">
-        </div>
+        <div class="form-group"><label>Start</label><input id="sess-start" type="time"></div>
+        <div class="form-group"><label>End</label><input id="sess-end" type="time"></div>
       </div>
-      <div class="form-group">
-        <label>Subject / Topic</label>
-        <input id="sess-subject" placeholder="e.g. Algebra Chapter 3">
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="sess-status">
+      <div class="form-group"><label>Subject / Topic</label><input id="sess-subj" placeholder="e.g. Algebra Ch 3"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="sess-status" onchange="toggleCancelBy()">
           <option value="scheduled">Scheduled</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
       </div>
-      <div id="cancel-reason-group" class="form-group" style="display:none;">
+      <div class="form-group" id="cancel-by-grp" style="display:none;">
         <label>Cancelled By</label>
-        <select id="sess-cancelled-by">
-          <option value="tutor">Tutor</option>
-          <option value="student">Student</option>
-        </select>
+        <select id="sess-cby"><option value="tutor">Tutor</option><option value="student">Student</option></select>
       </div>
-      <div class="form-group">
-        <label>Lesson Plan / Topics Covered</label>
-        <textarea id="sess-lesson" placeholder="What was taught in this session…"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Comment for Parent</label>
-        <textarea id="sess-comment" placeholder="Any note to share with parent…"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Internal Notes</label>
-        <textarea id="sess-notes" placeholder="Private notes (not shared with parent)…"></textarea>
-      </div>
+      <div class="form-group"><label>Lesson Plan / Topics Covered</label><textarea id="sess-lesson" placeholder="What was taught…"></textarea></div>
+      <div class="form-group"><label>Comment for Parent</label><textarea id="sess-comment" placeholder="Note for the parent…"></textarea></div>
+      <div class="form-group"><label>Internal Notes</label><textarea id="sess-notes" placeholder="Private notes…"></textarea></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-session')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveSession()">Save Session</button>
+      <button class="btn btn-outline" onclick="closeModal('m-session')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSess()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Session Detail Modal -->
-<div class="modal-overlay" id="modal-session-detail">
+<!-- Session detail modal -->
+<div class="modal-overlay" id="m-sess-detail">
   <div class="modal" style="max-width:440px;">
     <div class="modal-header">
       <h3>Session Details</h3>
-      <button class="btn-icon" onclick="closeModal('modal-session-detail')">✕</button>
+      <button class="btn-icon" onclick="closeModal('m-sess-detail')">✕</button>
     </div>
-    <div class="modal-body" id="session-detail-body"></div>
-    <div class="modal-footer" id="session-detail-footer"></div>
-  </div>
-</div>
-
-<!-- Share Portal Link modal -->
-<div class="modal-overlay" id="modal-portal-link">
-  <div class="modal" style="max-width:420px;">
-    <div class="modal-header">
-      <h3>🔗 Share Parent Portal</h3>
-      <button class="btn-icon" onclick="closeModal('modal-portal-link')">✕</button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Share this link with the parent. They can view class schedule, lesson plans &amp; fee status — no login needed.</p>
-      <div style="display:flex;gap:8px;">
-        <input id="portal-link-input" readonly style="font-size:11px;background:var(--bg);color:var(--muted);">
-        <button class="btn btn-primary" onclick="copyPortalLink()" style="white-space:nowrap;flex-shrink:0;">📋 Copy</button>
-      </div>
-      <p style="font-size:11px;color:var(--muted);margin-top:8px;">⚠️ This is a data snapshot — share a fresh link when you want to send updated info.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-portal-link')">Close</button>
-      <button class="btn btn-primary" onclick="openWhatsAppPortal()">💬 WhatsApp</button>
-    </div>
+    <div class="modal-body" id="sess-detail-body"></div>
+    <div class="modal-footer" id="sess-detail-footer"></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // DATA
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 const COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316','#06b6d4'];
-const STATUS_COLORS = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb' };
-const STATUS_TEXT   = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706' };
-const STATUS_LABEL  = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed' };
+const SC = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb' };
+const ST = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706' };
+const SL = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed' };
 
-let students   = JSON.parse(localStorage.getItem('tp_students')   || '[]');
-let sessions   = JSON.parse(localStorage.getItem('tp_sessions')   || '[]');
-let feeRecords = JSON.parse(localStorage.getItem('tp_fees')       || '[]');
+let students   = JSON.parse(localStorage.getItem('tp_students') || '[]');
+let sessions   = JSON.parse(localStorage.getItem('tp_sessions') || '[]');
+let feeRecs    = JSON.parse(localStorage.getItem('tp_fees')     || '[]');
 
-function saveStudents()   { localStorage.setItem('tp_students',   JSON.stringify(students)); }
-function saveSessions()   { localStorage.setItem('tp_sessions',   JSON.stringify(sessions)); }
-function saveFeeRecords() { localStorage.setItem('tp_fees',       JSON.stringify(feeRecords)); }
+const save = () => {
+  localStorage.setItem('tp_students', JSON.stringify(students));
+  localStorage.setItem('tp_sessions', JSON.stringify(sessions));
+  localStorage.setItem('tp_fees',     JSON.stringify(feeRecs));
+};
+const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+const getStu = id => students.find(s => s.id === id);
 
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function getStudent(id) { return students.find(s => s.id === id); }
-
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // UTILS
-// ─────────────────────────────────────────────
-function todayStr() {
+// ──────────────────────────────────────────────────────────────
+const todayStr = () => {
   const n = new Date();
-  return n.getFullYear() + '-' + (n.getMonth()+1).toString().padStart(2,'0') + '-' + n.getDate().toString().padStart(2,'0');
-}
-function monthStr(d) {
-  return d.getFullYear() + '-' + (d.getMonth()+1).toString().padStart(2,'0');
-}
-function fmt12(t) {
-  if (!t) return '';
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+};
+const monStr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const fmt12  = t => {
+  if (!t) return '—';
   const [h,m] = t.split(':').map(Number);
-  return ((h%12)||12) + ':' + m.toString().padStart(2,'0') + (h>=12?' PM':' AM');
-}
-function fmtDate(str) {
-  const d = new Date(str + 'T00:00:00');
-  return d.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
-}
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+  return `${(h%12)||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+};
+const fmtDate = s => {
+  const d = new Date(s+'T00:00:00');
+  return d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+};
+const toast = msg => {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2400);
+};
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // NAVIGATION
-// ─────────────────────────────────────────────
-let currentPage = 'dashboard';
-function navigate(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  document.getElementById('nav-' + page).classList.add('active');
-  currentPage = page;
+// ──────────────────────────────────────────────────────────────
+let curPage = 'dashboard';
+function navigate(pg) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+pg).classList.add('active');
+  document.getElementById('nav-'+pg).classList.add('active');
+  curPage = pg;
   closeSidebar();
-  if (page === 'dashboard') renderDashboard();
-  if (page === 'students')  renderStudents();
-  if (page === 'schedule')  renderSchedule();
-  if (page === 'fees')      renderFees();
+  if (pg==='dashboard') renderDash();
+  if (pg==='students')  renderStus();
+  if (pg==='schedule')  renderSched();
+  if (pg==='fees')      renderFees();
 }
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay-bg').classList.toggle('open');
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay-bg').classList.remove('open');
-}
+function toggleSidebar()  { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay-bg').classList.toggle('open'); }
+function closeSidebar()   { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay-bg').classList.remove('open'); }
+function openModal(id)    { document.getElementById(id).classList.add('open'); }
+function closeModal(id)   { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // DASHBOARD
-// ─────────────────────────────────────────────
-let weekOffset = 0;
-function prevWeek() { weekOffset--; renderDashboard(); }
-function nextWeek() { weekOffset++; renderDashboard(); }
-
-function renderDashboard() {
+// ──────────────────────────────────────────────────────────────
+let weekOff = 0;
+function renderDash() {
   const today = todayStr();
-  const now = new Date();
-  document.getElementById('dash-date-title').textContent =
-    now.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const now   = new Date();
+  document.getElementById('dash-title').textContent =
+    now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
   // Stats
-  document.getElementById('stat-today').textContent =
-    sessions.filter(s => s.date === today && s.status !== 'cancelled').length;
-  const wStart = new Date(); wStart.setDate(wStart.getDate() - wStart.getDay());
-  const wEnd   = new Date(wStart); wEnd.setDate(wStart.getDate() + 6);
-  const wS = wStart.toISOString().slice(0,10), wE = wEnd.toISOString().slice(0,10);
-  document.getElementById('stat-week').textContent =
-    sessions.filter(s => s.date >= wS && s.date <= wE && s.status !== 'cancelled').length;
-  document.getElementById('stat-students').textContent = students.length;
-  const curMon = monthStr(now);
-  document.getElementById('stat-month-sessions').textContent =
-    sessions.filter(s => s.date.startsWith(curMon) && s.status !== 'cancelled').length;
+  const ws = new Date(); ws.setDate(ws.getDate()-ws.getDay());
+  const we = new Date(ws); we.setDate(ws.getDate()+6);
+  const wsStr = ws.toISOString().slice(0,10), weStr = we.toISOString().slice(0,10);
+  const cm = monStr(now);
+  document.getElementById('s-today').textContent = sessions.filter(s=>s.date===today && s.status!=='cancelled').length;
+  document.getElementById('s-week').textContent  = sessions.filter(s=>s.date>=wsStr&&s.date<=weStr&&s.status!=='cancelled').length;
+  document.getElementById('s-stu').textContent   = students.length;
+  document.getElementById('s-mon').textContent   = sessions.filter(s=>s.date.startsWith(cm)&&s.status!=='cancelled').length;
 
   // Week grid
-  const anchor = new Date();
-  anchor.setDate(anchor.getDate() + weekOffset * 7);
-  const startOfWeek = new Date(anchor);
-  startOfWeek.setDate(anchor.getDate() - anchor.getDay());
-  const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-  let html = '';
-  for (let i=0; i<7; i++) {
-    const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
+  const anchor = new Date(); anchor.setDate(anchor.getDate()+weekOff*7);
+  const start  = new Date(anchor); start.setDate(anchor.getDate()-anchor.getDay());
+  const days   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  let wHtml = '';
+  for (let i=0;i<7;i++) {
+    const d = new Date(start); d.setDate(start.getDate()+i);
     const ds = d.toISOString().slice(0,10);
-    const daySess = sessions.filter(s => s.date === ds && s.status !== 'cancelled');
-    const isToday = ds === today;
-    const hasSess = daySess.length > 0;
-    html += `<div class="week-day">
-      <div class="week-day-name">${days[i]}</div>
-      <div class="week-day-num ${isToday?'today':hasSess?'has-session':''}" onclick="filterDaySchedule('${ds}')">${d.getDate()}</div>
-      ${daySess.slice(0,3).map(s=>{const st=getStudent(s.studentId);return`<div class="week-sess-dot" style="background:${st?.color||'#6366f1'}" title="${st?.name||''}"></div>`}).join('')}
+    const ss = sessions.filter(x=>x.date===ds&&x.status!=='cancelled');
+    const cls = ds===today ? 'today' : ss.length ? 'has-sess' : '';
+    wHtml += `<div class="week-col">
+      <div class="week-label">${days[i]}</div>
+      <div class="week-num ${cls}" onclick="jumpToDay('${ds}')">${d.getDate()}</div>
+      <div class="week-dots">${ss.slice(0,3).map(x=>{const s=getStu(x.studentId);return`<div class="week-dot" style="background:${s?.color||'#6366f1'}" title="${s?.name||''}"></div>`;}).join('')}</div>
     </div>`;
   }
-  document.getElementById('week-grid').innerHTML = html;
+  document.getElementById('week-grid').innerHTML = wHtml;
 
-  // Today sessions
-  const todaySess = sessions
-    .filter(s => s.date === today)
-    .sort((a,b) => (a.startTime||'').localeCompare(b.startTime||''));
-  if (!todaySess.length) {
-    document.getElementById('today-sessions').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No sessions today</div>`;
-    return;
-  }
-  document.getElementById('today-sessions').innerHTML = todaySess.map(s => {
-    const st = getStudent(s.studentId);
-    const parentInfo = st?.phone ? `<a href="tel:${st.phone}" style="text-decoration:none;">📞 Call</a>` : '';
-    return `<div class="session-item">
-      <div class="session-dot" style="background:${STATUS_TEXT[s.status]||'#6366f1'}"></div>
-      <div class="session-info">
-        <div class="session-title">${st?.name||'Unknown'}</div>
-        <div class="session-sub">${s.subject||''} ${st?.parent ? '· ' + st.parent : ''}</div>
-      </div>
-      <div class="session-time">
-        <div>${fmt12(s.startTime)}</div>
-        <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-top:4px;">${STATUS_LABEL[s.status]}</span>
-        ${st?.phone ? `<div style="margin-top:6px;"><a href="tel:${st.phone}" class="btn btn-outline btn-sm" style="text-decoration:none;display:inline-flex;gap:4px;align-items:center;">📞 Call</a></div>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+  // Today's sessions
+  const ts = sessions.filter(s=>s.date===today).sort((a,b)=>(a.startTime||'').localeCompare(b.startTime||''));
+  document.getElementById('today-list').innerHTML = ts.length
+    ? ts.map(s=>{
+        const st = getStu(s.studentId);
+        return `<div class="session-item">
+          <div class="session-dot" style="background:${ST[s.status]||'#6366f1'}"></div>
+          <div class="session-info">
+            <div class="session-name">${st?.name||'Unknown'}</div>
+            <div class="session-sub">${s.subject||''}${st?.parent?' · '+st.parent:''}</div>
+          </div>
+          <div class="session-right">
+            <div class="session-time">${fmt12(s.startTime)}</div>
+            <div style="margin-top:3px;"><span class="badge" style="background:${SC[s.status]};color:${ST[s.status]}">${SL[s.status]}</span></div>
+            ${st?.phone?`<div style="margin-top:5px;"><a href="tel:${st.phone}" class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 8px;">📞 Call</a></div>`:''}
+          </div>
+        </div>`;
+      }).join('')
+    : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">No sessions today</div>';
 }
+function jumpToDay(ds) { navigate('schedule'); setTimeout(()=>{ document.getElementById('f-mon').value=ds.slice(0,7); renderSched(); },50); }
 
-function filterDaySchedule(dateStr) {
-  navigate('schedule');
-  setTimeout(() => {
-    document.getElementById('filter-month').value = dateStr.slice(0,7);
-    renderSchedule();
-  }, 50);
-}
-
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // STUDENTS
-// ─────────────────────────────────────────────
-function renderStudents() {
-  document.getElementById('students-count').textContent = students.length + ' student' + (students.length!==1?'s':'');
+// ──────────────────────────────────────────────────────────────
+function renderStus() {
+  document.getElementById('stu-count').textContent = `${students.length} student${students.length!==1?'s':''}`;
   if (!students.length) {
-    document.getElementById('students-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">No students yet. Add your first student!</div>`;
+    document.getElementById('stu-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">No students yet – add one!</div>`;
     return;
   }
-  document.getElementById('students-grid').innerHTML = students.map(s => {
-    const sessCount = sessions.filter(x => x.studentId === s.id).length;
-    const completedCount = sessions.filter(x => x.studentId === s.id && x.status === 'completed').length;
+  document.getElementById('stu-grid').innerHTML = students.map(s=>{
+    const total = sessions.filter(x=>x.studentId===s.id).length;
+    const done  = sessions.filter(x=>x.studentId===s.id&&x.status==='completed').length;
     return `<div class="student-card">
-      <div class="student-card-header">
-        <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name.charAt(0).toUpperCase()}</div>
+      <div class="student-card-top">
+        <div class="student-avatar" style="background:${s.color||'#6366f1'}">${s.name[0].toUpperCase()}</div>
         <div>
           <div class="student-name">${s.name}</div>
-          <div class="student-meta">${[s.grade, s.subjects].filter(Boolean).join(' · ')}</div>
-          ${s.parent ? `<div class="student-meta" style="margin-top:2px;">👤 ${s.parent}</div>` : ''}
+          <div class="student-meta">${[s.grade,s.subjects].filter(Boolean).join(' · ')}</div>
+          ${s.parent?`<div class="student-meta" style="margin-top:1px;">👤 ${s.parent}</div>`:''}
         </div>
       </div>
-      <div class="student-card-body">
-        <div style="display:flex;gap:12px;font-size:12px;color:var(--muted);">
-          <span>📅 ${sessCount} sessions</span>
-          <span>✓ ${completedCount} done</span>
-          ${s.fee ? `<span>₹${s.fee}/${s.feeType==='monthly'?'mo':'sess'}</span>` : ''}
+      <div class="student-card-mid">
+        <div style="font-size:12px;color:var(--muted);display:flex;gap:10px;">
+          <span>📅 ${total} sessions</span><span>✓ ${done} done</span>
+          ${s.fee?`<span>₹${s.fee}/${s.feeType==='monthly'?'mo':'sess'}</span>`:''}
         </div>
-        ${s.phone ? `<div style="margin-top:8px;"><a href="tel:${s.phone}" class="btn btn-outline btn-sm" style="text-decoration:none;display:inline-flex;gap:4px;align-items:center;">📞 ${s.phone}</a></div>` : ''}
+        ${s.phone?`<div style="margin-top:8px;"><a href="tel:${s.phone}" class="btn btn-outline btn-sm" style="font-size:11px;">📞 ${s.phone}</a></div>`:''}
       </div>
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
-        <button class="btn btn-outline btn-sm" onclick="sharePortal('${s.id}')" title="Share read-only portal with parent">🔗 Portal</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
+        <button class="btn btn-outline btn-sm" onclick="editStu('${s.id}')">✏️ Edit</button>
+        <button class="btn btn-danger  btn-sm" onclick="delStu('${s.id}')">🗑 Delete</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function openAddStudentModal() {
-  document.getElementById('modal-student-title').textContent = 'Add Student';
-  document.getElementById('student-id').value = '';
-  ['s-name','s-grade','s-parent','s-phone','s-subjects','s-fee'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('s-fee-type').value = 'session';
-  renderColorSwatches(COLORS[0]);
-  openModal('modal-student');
-}
-
-function editStudent(id) {
-  const s = getStudent(id);
-  if (!s) return;
-  document.getElementById('modal-student-title').textContent = 'Edit Student';
-  document.getElementById('student-id').value = s.id;
-  document.getElementById('s-name').value     = s.name || '';
-  document.getElementById('s-grade').value    = s.grade || '';
-  document.getElementById('s-parent').value   = s.parent || '';
-  document.getElementById('s-phone').value    = s.phone || '';
-  document.getElementById('s-subjects').value = s.subjects || '';
-  document.getElementById('s-fee').value      = s.fee || '';
-  document.getElementById('s-fee-type').value = s.feeType || 'session';
-  renderColorSwatches(s.color || COLORS[0]);
-  openModal('modal-student');
-}
-
-function renderColorSwatches(selected) {
-  document.getElementById('color-swatches').innerHTML = COLORS.map(c =>
-    `<div class="color-swatch ${c===selected?'selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+let pickedColor = COLORS[0];
+function renderSwatches(sel) {
+  pickedColor = sel;
+  document.getElementById('color-swatches').innerHTML = COLORS.map(c=>
+    `<div class="color-swatch${c===sel?' sel':''}" style="background:${c}" onclick="renderSwatches('${c}')"></div>`
   ).join('');
 }
-function selectColor(c) { renderColorSwatches(c); }
-function getSelectedColor() {
-  const el = document.querySelector('.color-swatch.selected');
-  return el ? el.style.background : COLORS[0];
+function openStuModal() {
+  document.getElementById('m-stu-title').textContent = 'Add Student';
+  document.getElementById('stu-id').value = '';
+  ['stu-name','stu-parent','stu-phone','stu-subj','stu-fee'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('stu-grade').value = '';
+  document.getElementById('stu-fee-type').value = 'session';
+  renderSwatches(COLORS[0]);
+  openModal('m-student');
 }
-
-function saveStudent() {
-  const name = document.getElementById('s-name').value.trim();
-  if (!name) { toast('Student name is required'); return; }
-  const id = document.getElementById('student-id').value;
-  const data = {
-    name, grade: document.getElementById('s-grade').value.trim(),
-    parent: document.getElementById('s-parent').value.trim(),
-    phone: document.getElementById('s-phone').value.trim(),
-    subjects: document.getElementById('s-subjects').value.trim(),
-    fee: parseFloat(document.getElementById('s-fee').value) || 0,
-    feeType: document.getElementById('s-fee-type').value,
-    color: getSelectedColor(),
+function editStu(id) {
+  const s = getStu(id); if (!s) return;
+  document.getElementById('m-stu-title').textContent = 'Edit Student';
+  document.getElementById('stu-id').value       = s.id;
+  document.getElementById('stu-name').value     = s.name||'';
+  document.getElementById('stu-grade').value    = s.grade||'';
+  document.getElementById('stu-parent').value   = s.parent||'';
+  document.getElementById('stu-phone').value    = s.phone||'';
+  document.getElementById('stu-subj').value     = s.subjects||'';
+  document.getElementById('stu-fee').value      = s.fee||'';
+  document.getElementById('stu-fee-type').value = s.feeType||'session';
+  renderSwatches(s.color||COLORS[0]);
+  openModal('m-student');
+}
+function saveStu() {
+  const name = document.getElementById('stu-name').value.trim();
+  if (!name) { toast('Name is required'); return; }
+  const id  = document.getElementById('stu-id').value;
+  const obj = {
+    name,
+    grade:    document.getElementById('stu-grade').value,
+    parent:   document.getElementById('stu-parent').value.trim(),
+    phone:    document.getElementById('stu-phone').value.trim(),
+    subjects: document.getElementById('stu-subj').value.trim(),
+    fee:      parseFloat(document.getElementById('stu-fee').value)||0,
+    feeType:  document.getElementById('stu-fee-type').value,
+    color:    pickedColor,
   };
-  if (id) {
-    const idx = students.findIndex(s => s.id === id);
-    if (idx >= 0) students[idx] = { ...students[idx], ...data };
-  } else {
-    students.push({ id: uid(), ...data });
-  }
-  saveStudents();
-  closeModal('modal-student');
-  refreshStudentDropdowns();
-  renderStudents();
-  toast(id ? 'Student updated!' : 'Student added!');
+  if (id) { const i=students.findIndex(s=>s.id===id); if(i>=0) students[i]={...students[i],...obj}; }
+  else students.push({id:uid(),...obj});
+  save(); closeModal('m-student'); fillStuDropdowns(); renderStus();
+  toast(id?'Student updated!':'Student added!');
+}
+function delStu(id) {
+  if (!confirm('Delete student and all their sessions?')) return;
+  students   = students.filter(s=>s.id!==id);
+  sessions   = sessions.filter(s=>s.studentId!==id);
+  feeRecs    = feeRecs.filter(f=>f.studentId!==id);
+  save(); fillStuDropdowns(); renderStus(); toast('Deleted');
 }
 
-function deleteStudent(id) {
-  if (!confirm('Delete this student and all their sessions?')) return;
-  students = students.filter(s => s.id !== id);
-  sessions = sessions.filter(s => s.studentId !== id);
-  feeRecords = feeRecords.filter(f => f.studentId !== id);
-  saveStudents(); saveSessions(); saveFeeRecords();
-  refreshStudentDropdowns();
-  renderStudents();
-  toast('Student deleted');
-}
-
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // SESSIONS
-// ─────────────────────────────────────────────
-function refreshStudentDropdowns() {
-  const opts = '<option value="">All Students</option>' +
-    students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('filter-student').innerHTML = opts;
-
-  const sessOpts = students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-  document.getElementById('sess-student').innerHTML = sessOpts || '<option value="">No students</option>';
+// ──────────────────────────────────────────────────────────────
+function fillStuDropdowns() {
+  const opts = students.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('sess-stu').innerHTML   = opts||'<option>No students</option>';
+  document.getElementById('f-stu').innerHTML      = `<option value="">All Students</option>${opts}`;
 }
-
-function openAddSessionModal(dateStr) {
-  document.getElementById('modal-session-title').textContent = 'Add Session';
-  document.getElementById('session-id').value = '';
-  document.getElementById('sess-date').value  = dateStr || todayStr();
+function toggleCancelBy() {
+  document.getElementById('cancel-by-grp').style.display =
+    document.getElementById('sess-status').value==='cancelled' ? 'block' : 'none';
+}
+function openSessModal(date='') {
+  document.getElementById('m-sess-title').textContent = 'Add Session';
+  document.getElementById('sess-id').value    = '';
+  document.getElementById('sess-date').value  = date||todayStr();
   document.getElementById('sess-start').value = '';
   document.getElementById('sess-end').value   = '';
-  document.getElementById('sess-subject').value = '';
-  document.getElementById('sess-lesson').value  = '';
-  document.getElementById('sess-comment').value = '';
-  document.getElementById('sess-notes').value   = '';
-  document.getElementById('sess-status').value  = 'scheduled';
-  document.getElementById('cancel-reason-group').style.display = 'none';
-  if (students.length) document.getElementById('sess-student').selectedIndex = 0;
-  openModal('modal-session');
+  document.getElementById('sess-subj').value  = '';
+  document.getElementById('sess-lesson').value   = '';
+  document.getElementById('sess-comment').value  = '';
+  document.getElementById('sess-notes').value    = '';
+  document.getElementById('sess-status').value   = 'scheduled';
+  document.getElementById('cancel-by-grp').style.display = 'none';
+  if (students.length) document.getElementById('sess-stu').selectedIndex=0;
+  openModal('m-session');
 }
-
-function editSession(id) {
-  const s = sessions.find(x => x.id === id);
-  if (!s) return;
-  closeModal('modal-session-detail');
-  document.getElementById('modal-session-title').textContent = 'Edit Session';
-  document.getElementById('session-id').value    = s.id;
-  document.getElementById('sess-student').value  = s.studentId;
-  document.getElementById('sess-date').value     = s.date;
-  document.getElementById('sess-start').value    = s.startTime || '';
-  document.getElementById('sess-end').value      = s.endTime || '';
-  document.getElementById('sess-subject').value  = s.subject || '';
-  document.getElementById('sess-lesson').value   = s.lessonPlan || '';
-  document.getElementById('sess-comment').value  = s.comment || '';
-  document.getElementById('sess-notes').value    = s.notes || '';
-  document.getElementById('sess-status').value   = s.status;
-  document.getElementById('cancel-reason-group').style.display = s.status === 'cancelled' ? 'block' : 'none';
-  document.getElementById('sess-cancelled-by').value = s.cancelledBy || 'tutor';
-  openModal('modal-session');
+function editSess(id) {
+  const s = sessions.find(x=>x.id===id); if (!s) return;
+  closeModal('m-sess-detail');
+  document.getElementById('m-sess-title').textContent = 'Edit Session';
+  document.getElementById('sess-id').value      = s.id;
+  document.getElementById('sess-stu').value     = s.studentId;
+  document.getElementById('sess-date').value    = s.date;
+  document.getElementById('sess-start').value   = s.startTime||'';
+  document.getElementById('sess-end').value     = s.endTime||'';
+  document.getElementById('sess-subj').value    = s.subject||'';
+  document.getElementById('sess-lesson').value  = s.lessonPlan||'';
+  document.getElementById('sess-comment').value = s.comment||'';
+  document.getElementById('sess-notes').value   = s.notes||'';
+  document.getElementById('sess-status').value  = s.status;
+  document.getElementById('sess-cby').value     = s.cancelledBy||'tutor';
+  document.getElementById('cancel-by-grp').style.display = s.status==='cancelled'?'block':'none';
+  openModal('m-session');
 }
-
-document.getElementById('sess-status').addEventListener('change', function() {
-  document.getElementById('cancel-reason-group').style.display = this.value === 'cancelled' ? 'block' : 'none';
-});
-
-function saveSession() {
-  const studentId = document.getElementById('sess-student').value;
-  const date      = document.getElementById('sess-date').value;
-  if (!studentId || !date) { toast('Student and date are required'); return; }
-  const id = document.getElementById('session-id').value;
+function saveSess() {
+  const stuId = document.getElementById('sess-stu').value;
+  const date  = document.getElementById('sess-date').value;
+  if (!stuId||!date) { toast('Student & date required'); return; }
+  const id     = document.getElementById('sess-id').value;
   const status = document.getElementById('sess-status').value;
-  const data = {
-    studentId, date,
+  const obj = {
+    studentId: stuId, date,
     startTime:  document.getElementById('sess-start').value,
     endTime:    document.getElementById('sess-end').value,
-    subject:    document.getElementById('sess-subject').value.trim(),
+    subject:    document.getElementById('sess-subj').value.trim(),
     lessonPlan: document.getElementById('sess-lesson').value.trim(),
     comment:    document.getElementById('sess-comment').value.trim(),
     notes:      document.getElementById('sess-notes').value.trim(),
     status,
-    cancelledBy: status === 'cancelled' ? document.getElementById('sess-cancelled-by').value : null,
+    cancelledBy: status==='cancelled' ? document.getElementById('sess-cby').value : null,
   };
-  if (id) {
-    const idx = sessions.findIndex(x => x.id === id);
-    if (idx >= 0) sessions[idx] = { ...sessions[idx], ...data };
-  } else {
-    sessions.push({ id: uid(), ...data });
-  }
-  saveSessions();
-  closeModal('modal-session');
-  if (currentPage === 'dashboard') renderDashboard();
-  if (currentPage === 'schedule')  renderSchedule();
-  if (currentPage === 'fees')      renderFees();
-  toast(id ? 'Session updated!' : 'Session added!');
+  if (id) { const i=sessions.findIndex(x=>x.id===id); if(i>=0) sessions[i]={...sessions[i],...obj}; }
+  else sessions.push({id:uid(),...obj});
+  save(); closeModal('m-session');
+  if (curPage==='dashboard') renderDash();
+  if (curPage==='schedule')  renderSched();
+  if (curPage==='fees')      renderFees();
+  toast(id?'Session updated!':'Session added!');
 }
-
-function deleteSession(id) {
-  if (!confirm('Delete this session?')) return;
-  sessions = sessions.filter(s => s.id !== id);
-  saveSessions();
-  closeModal('modal-session-detail');
-  if (currentPage === 'dashboard') renderDashboard();
-  if (currentPage === 'schedule')  renderSchedule();
-  if (currentPage === 'fees')      renderFees();
+function delSess(id) {
+  if (!confirm('Delete session?')) return;
+  sessions=sessions.filter(s=>s.id!==id); save();
+  closeModal('m-sess-detail');
+  if (curPage==='dashboard') renderDash();
+  if (curPage==='schedule')  renderSched();
+  if (curPage==='fees')      renderFees();
   toast('Session deleted');
 }
-
-function viewSession(id) {
-  const s = sessions.find(x => x.id === id);
-  if (!s) return;
-  const st = getStudent(s.studentId);
-  document.getElementById('session-detail-body').innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div><strong>${st?.name||'Unknown'}</strong> &nbsp;<span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span></div>
-      <div style="font-size:13px;color:var(--muted)">${fmtDate(s.date)} &nbsp;·&nbsp; ${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
-      ${s.subject ? `<div><strong>Subject:</strong> ${s.subject}</div>` : ''}
-      ${s.lessonPlan ? `<div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;font-size:13px;">📚 ${s.lessonPlan}</div>` : ''}
-      ${s.comment ? `<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:13px;color:#78350f;">💬 ${s.comment}</div>` : ''}
-      ${s.notes ? `<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted);">🔒 ${s.notes}</div>` : ''}
-      ${s.cancelledBy ? `<div style="font-size:12px;color:var(--muted)">Cancelled by: ${s.cancelledBy}</div>` : ''}
+function viewSess(id) {
+  const s=sessions.find(x=>x.id===id); if(!s) return;
+  const st=getStu(s.studentId);
+  document.getElementById('sess-detail-body').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="font-weight:700">${st?.name||'Unknown'} &nbsp;<span class="badge" style="background:${SC[s.status]};color:${ST[s.status]}">${SL[s.status]}</span></div>
+      <div style="font-size:13px;color:var(--muted)">${fmtDate(s.date)} · ${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
+      ${s.subject?`<div><b>Subject:</b> ${s.subject}</div>`:''}
+      ${s.lessonPlan?`<div style="background:#f0f9ff;border-radius:8px;padding:10px 12px;font-size:13px">📚 ${s.lessonPlan}</div>`:''}
+      ${s.comment?`<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:13px;color:#78350f">💬 ${s.comment}</div>`:''}
+      ${s.notes?`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted)">🔒 ${s.notes}</div>`:''}
+      ${s.cancelledBy?`<div style="font-size:12px;color:var(--muted)">Cancelled by: ${s.cancelledBy}</div>`:''}
     </div>`;
-  document.getElementById('session-detail-footer').innerHTML = `
-    <button class="btn btn-outline" onclick="closeModal('modal-session-detail')">Close</button>
-    <button class="btn btn-outline" onclick="editSession('${id}')">✏️ Edit</button>
-    <button class="btn btn-danger" onclick="deleteSession('${id}')">🗑 Delete</button>`;
-  openModal('modal-session-detail');
+  document.getElementById('sess-detail-footer').innerHTML=`
+    <button class="btn btn-outline" onclick="closeModal('m-sess-detail')">Close</button>
+    <button class="btn btn-outline" onclick="editSess('${id}')">✏️ Edit</button>
+    <button class="btn btn-danger"  onclick="delSess('${id}')">🗑 Delete</button>`;
+  openModal('m-sess-detail');
 }
 
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // SCHEDULE
-// ─────────────────────────────────────────────
-function populateMonthFilter() {
-  const months = [...new Set(sessions.map(s => s.date.slice(0,7)))].sort().reverse();
-  const cur = monthStr(new Date());
-  if (!months.includes(cur)) months.unshift(cur);
-  const sel = document.getElementById('filter-month');
-  const current = sel.value || cur;
-  sel.innerHTML = months.map(m => {
-    const label = new Date(m + '-01').toLocaleDateString('en-IN', { month:'long', year:'numeric' });
-    return `<option value="${m}" ${m===current?'selected':''}>${label}</option>`;
-  }).join('');
+// ──────────────────────────────────────────────────────────────
+function fillMonthFilter() {
+  const all = [...new Set(sessions.map(s=>s.date.slice(0,7)))].sort().reverse();
+  const cur = monStr(new Date());
+  if (!all.includes(cur)) all.unshift(cur);
+  const sel = document.getElementById('f-mon');
+  const was = sel.value||cur;
+  sel.innerHTML = all.map(m=>`<option value="${m}"${m===was?' selected':''}>${new Date(m+'-01').toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</option>`).join('');
+}
+function renderSched() {
+  fillMonthFilter();
+  const fs = document.getElementById('f-stu').value;
+  const fm = document.getElementById('f-mon').value||monStr(new Date());
+  const fst= document.getElementById('f-sta').value;
+  const rows = sessions
+    .filter(s=>(!fs||s.studentId===fs)&&s.date.startsWith(fm)&&(!fst||s.status===fst))
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.startTime||'').localeCompare(b.startTime||''));
+  document.getElementById('sched-body').innerHTML = rows.length
+    ? rows.map(s=>{const st=getStu(s.studentId);return`<tr>
+        <td>${fmtDate(s.date)}</td>
+        <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${st?.color||'#6366f1'};margin-right:6px;vertical-align:middle;"></span>${st?.name||'?'}</td>
+        <td>${fmt12(s.startTime)}${s.endTime?' – '+fmt12(s.endTime):''}</td>
+        <td>${s.subject||'—'}</td>
+        <td><span class="badge" style="background:${SC[s.status]};color:${ST[s.status]}">${SL[s.status]}</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="viewSess('${s.id}')">View</button></td>
+      </tr>`;}).join('')
+    : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">No sessions found</td></tr>`;
 }
 
-function renderSchedule() {
-  populateMonthFilter();
-  const filterStu = document.getElementById('filter-student').value;
-  const filterMon = document.getElementById('filter-month').value || monthStr(new Date());
-  const filterSts = document.getElementById('filter-status').value;
-
-  const filtered = sessions
-    .filter(s =>
-      (!filterStu || s.studentId === filterStu) &&
-      s.date.startsWith(filterMon) &&
-      (!filterSts || s.status === filterSts)
-    )
-    .sort((a,b) => a.date.localeCompare(b.date) || (a.startTime||'').localeCompare(b.startTime||''));
-
-  if (!filtered.length) {
-    document.getElementById('sched-tbody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);">No sessions for this period</td></tr>`;
-    return;
-  }
-  document.getElementById('sched-tbody').innerHTML = filtered.map(s => {
-    const st = getStudent(s.studentId);
-    return `<tr>
-      <td>${fmtDate(s.date)}</td>
-      <td><div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:${st?.color||'#6366f1'};flex-shrink:0;"></div>${st?.name||'?'}</div></td>
-      <td>${fmt12(s.startTime)} ${s.endTime?'– '+fmt12(s.endTime):''}</td>
-      <td>${s.subject||'—'}</td>
-      <td><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span></td>
-      <td><button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">View</button></td>
-    </tr>`;
-  }).join('');
-}
-
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // FEES
-// ─────────────────────────────────────────────
-let feeMonthOffset = 0;
-function prevFeeMonth() { feeMonthOffset--; renderFees(); }
-function nextFeeMonth() { feeMonthOffset++; renderFees(); }
-
+// ──────────────────────────────────────────────────────────────
+let feeOff = 0;
 function renderFees() {
-  const d = new Date();
-  d.setMonth(d.getMonth() + feeMonthOffset);
-  const curMonth = monthStr(d);
-  const label = d.toLocaleDateString('en-IN', { month:'long', year:'numeric' });
-  document.getElementById('fees-month-label').textContent = label;
+  const d = new Date(); d.setMonth(d.getMonth()+feeOff);
+  const cm = monStr(d);
+  document.getElementById('fee-month-lbl').textContent = d.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
 
   if (!students.length) {
-    document.getElementById('fees-grid').innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);">Add students to track fees.</div>`;
-    document.getElementById('fee-summary').innerHTML = '';
+    document.getElementById('fee-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted)">No students yet</div>`;
+    document.getElementById('fee-summary').innerHTML='';
     return;
   }
 
-  let totalExpected = 0, totalCollected = 0;
-
-  const cards = students.map(s => {
-    const feeId = `${s.id}_${curMonth}`;
-    let feeRec = feeRecords.find(f => f.id === feeId);
-    if (!feeRec) { feeRec = { id: feeId, studentId: s.id, month: curMonth, paid: false }; }
-
-    const plannedSess = sessions.filter(x =>
-      x.studentId === s.id &&
-      x.date.startsWith(curMonth) &&
-      !(x.status === 'cancelled' && x.cancelledBy === 'student')
-    ).length;
-
-    const monthFee = s.feeType === 'monthly'
-      ? (s.fee || 0)
-      : (s.fee || 0) * plannedSess;
-
-    totalExpected += monthFee;
-    if (feeRec.paid) totalCollected += monthFee;
-
-    return { s, feeRec, feeId, monthFee, plannedSess };
+  let totExp=0, totPaid=0;
+  const cards = students.map(s=>{
+    const fId  = `${s.id}_${cm}`;
+    const fRec = feeRecs.find(f=>f.id===fId)||{id:fId,studentId:s.id,month:cm,paid:false};
+    const plan = sessions.filter(x=>x.studentId===s.id&&x.date.startsWith(cm)&&!(x.status==='cancelled'&&x.cancelledBy==='student')).length;
+    const amt  = s.feeType==='monthly'?(s.fee||0):(s.fee||0)*plan;
+    totExp+=amt; if(fRec.paid) totPaid+=amt;
+    return {s,fRec,fId,amt,plan};
   });
 
-  document.getElementById('fee-summary').innerHTML = `
-    <div class="card" style="flex:1;min-width:150px;">
-      <div class="card-title">Expected</div>
-      <div style="font-size:22px;font-weight:800;">₹${Math.round(totalExpected).toLocaleString('en-IN')}</div>
-    </div>
-    <div class="card" style="flex:1;min-width:150px;">
-      <div class="card-title">Collected</div>
-      <div style="font-size:22px;font-weight:800;color:var(--success);">₹${Math.round(totalCollected).toLocaleString('en-IN')}</div>
-    </div>
-    <div class="card" style="flex:1;min-width:150px;">
-      <div class="card-title">Pending</div>
-      <div style="font-size:22px;font-weight:800;color:var(--danger);">₹${Math.round(totalExpected-totalCollected).toLocaleString('en-IN')}</div>
-    </div>`;
+  document.getElementById('fee-summary').innerHTML=`
+    <div class="card" style="flex:1;min-width:130px;"><div class="card-title">Expected</div><div style="font-size:20px;font-weight:800">₹${Math.round(totExp).toLocaleString('en-IN')}</div></div>
+    <div class="card" style="flex:1;min-width:130px;"><div class="card-title">Collected</div><div style="font-size:20px;font-weight:800;color:var(--success)">₹${Math.round(totPaid).toLocaleString('en-IN')}</div></div>
+    <div class="card" style="flex:1;min-width:130px;"><div class="card-title">Pending</div><div style="font-size:20px;font-weight:800;color:var(--danger)">₹${Math.round(totExp-totPaid).toLocaleString('en-IN')}</div></div>`;
 
-  document.getElementById('fees-grid').innerHTML = cards.map(({s, feeRec, feeId, monthFee, plannedSess}) => `
+  document.getElementById('fee-grid').innerHTML=cards.map(({s,fRec,fId,amt,plan})=>`
     <div class="fee-card">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-        <div style="width:36px;height:36px;border-radius:50%;background:${s.color||'#6366f1'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;">${s.name.charAt(0)}</div>
-        <div>
-          <div class="fee-name">${s.name}</div>
-          <div class="fee-detail">${s.grade||''}</div>
-        </div>
+        <div style="width:34px;height:34px;border-radius:50%;background:${s.color||'#6366f1'};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;">${s.name[0].toUpperCase()}</div>
+        <div><div class="fee-name">${s.name}</div><div class="fee-detail">${s.grade||''}</div></div>
       </div>
-      <div class="fee-amount">₹${Math.round(monthFee).toLocaleString('en-IN')}</div>
-      <div class="fee-detail" style="margin-bottom:12px;">
-        ${s.feeType==='monthly' ? 'Monthly fee' : `₹${s.fee}/session × ${plannedSess} sessions`}
-      </div>
+      <div class="fee-amount">₹${Math.round(amt).toLocaleString('en-IN')}</div>
+      <div class="fee-detail" style="margin-bottom:10px;">${s.feeType==='monthly'?'Monthly fee':`₹${s.fee}/session × ${plan} sessions`}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span class="badge ${feeRec.paid?'badge-success':'badge-warning'}">${feeRec.paid?'✓ Paid':'⏳ Pending'}</span>
-        <button class="btn btn-sm ${feeRec.paid?'btn-outline':'btn-primary'}" onclick="toggleFee('${feeId}','${s.id}')">
-          ${feeRec.paid ? 'Mark Unpaid' : 'Mark Paid'}
-        </button>
+        <span class="badge ${fRec.paid?'badge-success':'badge-warning'}">${fRec.paid?'✓ Paid':'⏳ Pending'}</span>
+        <button class="btn btn-sm ${fRec.paid?'btn-outline':'btn-primary'}" onclick="toggleFee('${fId}','${s.id}')">${fRec.paid?'Mark Unpaid':'Mark Paid'}</button>
       </div>
     </div>`).join('');
 }
-
-function toggleFee(feeId, studentId) {
-  const idx = feeRecords.findIndex(f => f.id === feeId);
-  const d = new Date(); d.setMonth(d.getMonth() + feeMonthOffset);
-  if (idx >= 0) {
-    feeRecords[idx].paid = !feeRecords[idx].paid;
-  } else {
-    feeRecords.push({ id: feeId, studentId, month: monthStr(d), paid: true });
-  }
-  saveFeeRecords();
-  renderFees();
-  toast('Fee status updated!');
+function toggleFee(fId,stuId) {
+  const d=new Date(); d.setMonth(d.getMonth()+feeOff);
+  const i=feeRecs.findIndex(f=>f.id===fId);
+  if (i>=0) feeRecs[i].paid=!feeRecs[i].paid;
+  else feeRecs.push({id:fId,studentId:stuId,month:monStr(d),paid:true});
+  save(); renderFees(); toast('Fee updated!');
 }
 
-// ─────────────────────────────────────────────
-// PORTAL SHARE
-// ─────────────────────────────────────────────
-function sharePortal(studentId) {
-  const s = getStudent(studentId);
-  if (!s) return;
-  const now = new Date();
-  const curMonth = monthStr(now);
-  const cutoff = monthStr(new Date(now.getFullYear(), now.getMonth() - 2, 1));
-  const future  = monthStr(new Date(now.getFullYear(), now.getMonth() + 3, 1));
-  const portalSessions = sessions
-    .filter(x => x.studentId === studentId && x.date >= cutoff && x.date < future)
-    .map(x => ({ date: x.date, startTime: x.startTime, endTime: x.endTime, status: x.status, lessonPlan: x.lessonPlan || '', comment: x.comment || '' }))
-    .sort((a,b) => a.date.localeCompare(b.date));
-  const plannedThisMonth = sessions.filter(x =>
-    x.studentId === studentId && x.date.startsWith(curMonth) &&
-    !(x.status === 'cancelled' && x.cancelledBy === 'student')
-  ).length;
-  const feeRec = feeRecords.find(f => f.id === `${studentId}_${curMonth}`);
-  const payload = {
-    v: 1,
-    student: { name: s.name, grade: s.grade || '', subjects: s.subjects || '', color: s.color || '#6366f1', parent: s.parent || '' },
-    sessions: portalSessions,
-    fees: { fee: s.fee || 0, feeType: s.feeType || 'session', currentMonth: curMonth, paid: feeRec?.paid || false, sessionsThisMonth: plannedThisMonth },
-    generatedAt: now.toISOString(),
-  };
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  const base = location.origin + location.pathname.replace(/[^/]*$/, '') + 'portal.html';
-  const url = base + '?portal=' + encoded;
-  document.getElementById('portal-link-input').value = url;
-  openModal('modal-portal-link');
-}
-
-function copyPortalLink() {
-  const v = document.getElementById('portal-link-input').value;
-  navigator.clipboard?.writeText(v).then(() => toast('Link copied! 📋')).catch(() => {
-    document.getElementById('portal-link-input').select();
-    document.execCommand('copy');
-    toast('Link copied! 📋');
-  });
-}
-
-function openWhatsAppPortal() {
-  const url = document.getElementById('portal-link-input').value;
-  window.open('https://wa.me/?text=' + encodeURIComponent('📚 View your child\'s tuition progress: ' + url), '_blank');
-}
-
-// ─────────────────────────────────────────────
-// MODAL HELPERS
-// ─────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
-});
-
-// ─────────────────────────────────────────────
-// PRINT
-// ─────────────────────────────────────────────
-function printSchedule() { window.print(); }
-
-// ─────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
 // INIT
-// ─────────────────────────────────────────────
-refreshStudentDropdowns();
-renderDashboard();
+// ──────────────────────────────────────────────────────────────
+fillStuDropdowns();
+renderDash();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/Projects/sw.js'));
