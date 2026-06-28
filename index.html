@@ -385,6 +385,16 @@
           </select>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Parent / Guardian Name</label>
+          <input id="s-parent" placeholder="e.g. Ramesh Kumar">
+        </div>
+        <div class="form-group">
+          <label>Phone Number 📞</label>
+          <input id="s-phone" type="tel" placeholder="e.g. 98765 43210">
+        </div>
+      </div>
       <div class="form-group">
         <label>Subjects</label>
         <div style="display:flex;gap:16px;margin-top:4px;">
@@ -665,14 +675,18 @@ function renderDashboard() {
   } else {
     todayBox.innerHTML = tSorted.map(s => {
       const st = getStudent(s.studentId);
+      const callBtn = st?.phone
+        ? `<a href="tel:${st.phone}" class="btn btn-sm btn-outline" style="padding:5px 10px;text-decoration:none;white-space:nowrap;" title="Call ${st.parent||st.name}">📞 Call</a>`
+        : '';
       return `<div class="today-item">
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
           <div class="today-name">${st?.name||'Unknown'}</div>
-          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
+          <div class="today-subj">${st?.parent ? st.parent + ' · ' : ''}${fmt12(s.startTime)}–${fmt12(s.endTime)}</div>
         </div>
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+        ${callBtn}
       </div>`;
     }).join('');
   }
@@ -749,6 +763,8 @@ function openAddStudent() {
   document.getElementById('s-id').value = '';
   document.getElementById('s-name').value = '';
   document.getElementById('s-grade').value = '';
+  document.getElementById('s-parent').value = '';
+  document.getElementById('s-phone').value = '';
   document.getElementById('s-sub-english').checked = false;
   document.getElementById('s-sub-maths').checked = false;
   document.getElementById('s-fee').value = '';
@@ -767,6 +783,8 @@ function editStudent(id) {
   document.getElementById('s-id').value = s.id;
   document.getElementById('s-name').value = s.name;
   document.getElementById('s-grade').value = s.grade || '';
+  document.getElementById('s-parent').value = s.parent || '';
+  document.getElementById('s-phone').value = s.phone || '';
   const subs = (s.subjects || '').split(',').map(x => x.trim());
   document.getElementById('s-sub-english').checked = subs.includes('English');
   document.getElementById('s-sub-maths').checked = subs.includes('Maths');
@@ -791,6 +809,8 @@ function saveStudent() {
     id: id || uid(),
     name,
     grade: document.getElementById('s-grade').value,
+    parent: document.getElementById('s-parent').value.trim(),
+    phone: document.getElementById('s-phone').value.trim(),
     subjects: subsArr.join(', '),
     fee: parseFloat(document.getElementById('s-fee').value) || 0,
     feeType: document.getElementById('s-fee-type').value,
@@ -860,11 +880,8 @@ function renderCalendar() {
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
 
   let cells = [];
-  // prev month padding
   for (let i = firstDay - 1; i >= 0; i--) cells.push({ day: daysInPrev - i, type: 'prev' });
-  // this month
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, type: 'cur' });
-  // next month padding
   let remaining = 42 - cells.length;
   for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
 
@@ -988,7 +1005,6 @@ function editSession(id) {
   document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
   document.getElementById('sess-notes').value = s.notes || '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
-  // Restore cancel-by
   const group = document.getElementById('cancel-by-group');
   if (s.status === 'cancelled') {
     group.style.display = '';
@@ -1036,7 +1052,6 @@ function saveSession() {
     toast('Session updated');
   } else {
     sessions.push(baseSession);
-    // Recurring
     if (recurDays.length) {
       const [y, m] = date.split('-').map(Number);
       const daysInMonth = new Date(y, m, 0).getDate();
@@ -1044,9 +1059,7 @@ function saveSession() {
         const dt = new Date(y, m - 1, d);
         if (recurDays.includes(dt.getDay())) {
           const ds = `${y}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-          if (ds !== date) {
-            sessions.push({ ...baseSession, id: uid(), date: ds });
-          }
+          if (ds !== date) sessions.push({ ...baseSession, id: uid(), date: ds });
         }
       }
       toast(`Sessions added for ${recurDays.length} day(s) throughout the month`);
@@ -1082,6 +1095,7 @@ function viewSession(id) {
       <div>
         <div style="font-size:17px;font-weight:700">${st?.name||'Unknown'}</div>
         <div style="font-size:13px;color:var(--muted)">${st?.grade||''} ${st?.subjects ? '· ' + st.subjects : ''}</div>
+        ${st?.phone ? `<a href="tel:${st.phone}" style="font-size:13px;color:var(--primary);text-decoration:none;font-weight:500;">📞 ${st.phone}${st.parent ? ' (' + st.parent + ')' : ''}</a>` : ''}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -1100,7 +1114,6 @@ function viewSession(id) {
   document.getElementById('view-sess-comment').value = s.comment || '';
   document.getElementById('view-sess-delete').onclick = () => deleteSession(id);
   document.getElementById('view-sess-edit').onclick = () => { closeModal('modal-view-session'); editSession(id); };
-  // Reschedule button (only for tutor-cancelled sessions)
   const reschedBtn = document.getElementById('view-sess-reschedule');
   if (s.status === 'cancelled' && s.cancelledBy === 'tutor') {
     reschedBtn.style.display = '';
@@ -1144,7 +1157,6 @@ function markRescheduled(id) {
 // ─────────────────────────────────────────────
 function renderFees() {
   const sel = document.getElementById('fee-month-select');
-  // Populate month dropdown (last 6 months + next 2)
   const now = new Date();
   const months = [];
   for (let i = -1; i <= 6; i++) {
@@ -1155,7 +1167,6 @@ function renderFees() {
   sel.innerHTML = months.map(m => `<option value="${m.val}"${m.val===curVal?' selected':''}>${m.label}</option>`).join('');
   const selectedMonth = sel.value;
 
-  // Previous month (deductions carry from there)
   const [sy, sm] = selectedMonth.split('-').map(Number);
   const prevMonth = monthStr(new Date(sy, sm - 2, 1));
 
@@ -1163,19 +1174,16 @@ function renderFees() {
   if (!students.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
 
   tbody.innerHTML = students.map(s => {
-    // Sessions this month: exclude student-cancelled (tutor keeps that money)
     const plannedSess = sessions.filter(x =>
       x.studentId === s.id &&
       x.date.startsWith(selectedMonth) &&
       !(x.status === 'cancelled' && x.cancelledBy === 'student')
     );
 
-    // Base fee (collected upfront at start of month)
     let baseAmount = s.feeType === 'monthly'
       ? (s.fee || 0)
       : (s.fee || 0) * plannedSess.length;
 
-    // Deductions: tutor-cancelled + unrescheduled sessions from previous month
     const tutorCancelledPrev = sessions.filter(x =>
       x.studentId === s.id &&
       x.date.startsWith(prevMonth) &&
@@ -1189,7 +1197,6 @@ function renderFees() {
       if (s.feeType === 'session') {
         deduction = (s.fee || 0) * tutorCancelledPrev.length;
       } else {
-        // Per-session rate = monthly fee ÷ total planned sessions in prev month
         const prevPlanned = sessions.filter(x =>
           x.studentId === s.id &&
           x.date.startsWith(prevMonth) &&
@@ -1225,7 +1232,6 @@ function renderFees() {
 // LESSON PLANS
 // ─────────────────────────────────────────────
 function renderLessonPlans() {
-  // Populate dropdowns
   const stSel = document.getElementById('lp-filter-student');
   const mSel  = document.getElementById('lp-filter-month');
   if (stSel) {
@@ -1262,7 +1268,6 @@ function renderLessonPlans() {
     return;
   }
 
-  // Group by date
   const byDate = {};
   list.forEach(s => { (byDate[s.date] = byDate[s.date] || []).push(s); });
 
