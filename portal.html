@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parent Portal – TuitionPlanner</title>
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Parent Portal">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+
+  .portal-hero { padding: 32px 20px 36px; position: relative; overflow: hidden; }
+  .portal-hero::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,.12); }
+  .portal-hero > * { position: relative; z-index: 1; }
+  .portal-avatar { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: #fff; margin-bottom: 14px; border: 2.5px solid rgba(255,255,255,.45); }
+  .portal-hero-name { font-size: 26px; font-weight: 800; color: #fff; }
+  .portal-hero-meta { font-size: 14px; color: rgba(255,255,255,.85); margin-top: 6px; }
+  .portal-updated { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 12px; }
+
+  .portal-body { padding: 16px; max-width: 560px; margin: 0 auto; }
+  .portal-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .portal-card-title { padding: 13px 16px 11px; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .6px; border-bottom: 1px solid #f1f5f9; }
+
+  .portal-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: #f1f5f9; }
+  .portal-stat { background: #fff; text-align: center; padding: 16px 8px; }
+  .portal-stat-val { font-size: 24px; font-weight: 800; }
+  .portal-stat-lbl { font-size: 11px; color: #64748b; margin-top: 3px; }
+
+  .portal-sess-row { padding: 13px 16px; border-bottom: 1px solid #f8fafc; }
+  .portal-sess-row:last-child { border-bottom: none; }
+  .portal-sess-date { font-size: 13px; font-weight: 700; color: #6366f1; }
+  .portal-sess-time { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .portal-lesson-box { background: #f0f9ff; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.65; color: #0f172a; margin-top: 8px; white-space: pre-wrap; }
+  .portal-comment-box { background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.65; color: #78350f; margin-top: 6px; white-space: pre-wrap; }
+
+  .portal-fee-row { padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f8fafc; }
+  .portal-fee-row:last-child { border-bottom: none; }
+
+  .badge { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-success { background: #dcfce7; color: #166534; }
+  .badge-warning { background: #fffbeb; color: #92400e; }
+
+  .empty-msg { padding: 20px 16px; text-align: center; color: #94a3b8; font-size: 13px; }
+
+  .portal-footer { text-align: center; padding: 20px 16px 36px; }
+  .portal-disclaimer { font-size: 11px; color: #94a3b8; line-height: 1.6; }
+  .portal-brand { font-size: 13px; color: #94a3b8; font-weight: 500; margin-top: 8px; }
+
+  .error-page { text-align: center; padding: 80px 24px; }
+  .error-icon { font-size: 56px; margin-bottom: 20px; }
+  .error-title { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
+  .error-msg { font-size: 14px; color: #64748b; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const STATUS_COLORS = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb' };
+const STATUS_TEXT   = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706' };
+const STATUS_LABEL  = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed' };
+
+function fmt12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return ((h % 12) || 12) + ':' + m.toString().padStart(2,'0') + (h >= 12 ? ' PM' : ' AM');
+}
+
+function todayStr() {
+  const n = new Date();
+  return n.getFullYear() + '-' + (n.getMonth()+1).toString().padStart(2,'0') + '-' + n.getDate().toString().padStart(2,'0');
+}
+
+function showError(title, msg) {
+  document.getElementById('app').innerHTML = `
+    <div class="error-page">
+      <div class="error-icon">⚠️</div>
+      <div class="error-title">${title}</div>
+      <div class="error-msg">${msg}</div>
+      <div class="portal-brand" style="margin-top:32px;">✏️ TuitionPlanner</div>
+    </div>`;
+}
+
+function renderPortal(data) {
+  const s = data.student || {};
+  const today = todayStr();
+  const allSess = data.sessions || [];
+
+  document.title = (s.name || 'Student') + ' – Parent Portal';
+  const mt = document.querySelector('meta[name="theme-color"]');
+  if (mt && s.color) mt.content = s.color;
+
+  const upcoming = allSess
+    .filter(x => x.date >= today && (x.status === 'scheduled' || x.status === 'completed'))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 15);
+
+  const past = allSess
+    .filter(x => x.date < today && x.status === 'completed')
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 30);
+
+  const completedCount = allSess.filter(x => x.status === 'completed').length;
+  const cancelledCount = allSess.filter(x => x.status === 'cancelled').length;
+
+  const fees = data.fees || {};
+  const monthFee = fees.feeType === 'monthly'
+    ? (fees.fee || 0)
+    : (fees.fee || 0) * (fees.sessionsThisMonth || 0);
+  const feeMonthLabel = fees.currentMonth
+    ? new Date(fees.currentMonth + '-01').toLocaleDateString('en-IN', { month:'long', year:'numeric' })
+    : '';
+  const genDate = data.generatedAt
+    ? new Date(data.generatedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    : '';
+
+  const upcomingHtml = upcoming.length
+    ? upcoming.map(x => {
+        const dt = new Date(x.date + 'T00:00:00');
+        const lbl = x.date === today
+          ? '📍 Today'
+          : dt.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'short' });
+        return `<div class="portal-sess-row">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="portal-sess-date">${lbl}</div>
+              <div class="portal-sess-time">${fmt12(x.startTime)} – ${fmt12(x.endTime)}</div>
+            </div>
+            <span class="badge" style="background:${STATUS_COLORS[x.status]};color:${STATUS_TEXT[x.status]}">${STATUS_LABEL[x.status]}</span>
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="empty-msg">No upcoming classes scheduled</div>`;
+
+  const pastHtml = past.length
+    ? past.map(x => {
+        const dt = new Date(x.date + 'T00:00:00');
+        const lbl = dt.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+        const hasMeta = x.lessonPlan || x.comment;
+        return `<div class="portal-sess-row">
+          <div style="display:flex;align-items:center;justify-content:space-between;${hasMeta ? 'margin-bottom:8px' : ''}">
+            <div>
+              <div class="portal-sess-date">${lbl}</div>
+              <div class="portal-sess-time">${fmt12(x.startTime)} – ${fmt12(x.endTime)}</div>
+            </div>
+            <span class="badge badge-success">Completed</span>
+          </div>
+          ${x.lessonPlan ? `<div class="portal-lesson-box">📚 ${x.lessonPlan}</div>` : ''}
+          ${x.comment ? `<div class="portal-comment-box">💬 <strong>Teacher's note:</strong> ${x.comment}</div>` : ''}
+        </div>`;
+      }).join('')
+    : `<div class="empty-msg">No completed sessions yet</div>`;
+
+  const feeHtml = fees.fee
+    ? `<div class="portal-fee-row">
+        <span style="font-size:13px;color:#64748b">${feeMonthLabel} Fee</span>
+        <span style="font-size:18px;font-weight:800;">₹${Math.round(monthFee).toLocaleString('en-IN')}</span>
+       </div>
+       <div class="portal-fee-row">
+        <span style="font-size:13px;color:#64748b">Payment Status</span>
+        <span class="badge ${fees.paid ? 'badge-success' : 'badge-warning'}" style="font-size:13px;padding:5px 14px;">${fees.paid ? '✓ Paid' : '⏳ Pending'}</span>
+       </div>
+       ${fees.feeType === 'session' ? `<div class="portal-fee-row"><span style="font-size:12px;color:#94a3b8">₹${fees.fee}/session × ${fees.sessionsThisMonth} sessions this month</span></div>` : ''}`
+    : `<div class="empty-msg">Fee information not available</div>`;
+
+  document.getElementById('app').innerHTML = `
+    <div class="portal-hero" style="background:${s.color||'#6366f1'}">
+      <div class="portal-avatar">${(s.name||'?').charAt(0).toUpperCase()}</div>
+      <div class="portal-hero-name">${s.name||'Student'}</div>
+      <div class="portal-hero-meta">${[s.grade, s.subjects].filter(Boolean).join(' · ')}</div>
+      ${genDate ? `<div class="portal-updated">Last updated: ${genDate}</div>` : ''}
+    </div>
+
+    <div class="portal-body">
+
+      <div class="portal-card">
+        <div class="portal-card-title">📊 Overview</div>
+        <div class="portal-stats">
+          <div class="portal-stat"><div class="portal-stat-val" style="color:#6366f1">${completedCount}</div><div class="portal-stat-lbl">Completed</div></div>
+          <div class="portal-stat"><div class="portal-stat-val" style="color:#f59e0b">${upcoming.length}</div><div class="portal-stat-lbl">Upcoming</div></div>
+          <div class="portal-stat"><div class="portal-stat-val" style="color:#ef4444">${cancelledCount}</div><div class="portal-stat-lbl">Cancelled</div></div>
+        </div>
+      </div>
+
+      <div class="portal-card">
+        <div class="portal-card-title">📅 Upcoming Classes</div>
+        ${upcomingHtml}
+      </div>
+
+      <div class="portal-card">
+        <div class="portal-card-title">📚 Topics Covered</div>
+        ${pastHtml}
+      </div>
+
+      <div class="portal-card">
+        <div class="portal-card-title">💰 Fee Status</div>
+        ${feeHtml}
+      </div>
+
+    </div>
+
+    <div class="portal-footer">
+      <div class="portal-disclaimer">Read-only view shared by your child's tutor.<br>Contact your tutor for any queries or changes.</div>
+      <div class="portal-brand">✏️ TuitionPlanner</div>
+    </div>
+  `;
+}
+
+(function init() {
+  const param = new URLSearchParams(location.search).get('portal');
+  if (!param) {
+    showError('No Portal Link', "Please open the link shared by your child's tutor to view this portal.");
+    return;
+  }
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(param))));
+    renderPortal(data);
+  } catch(_) {
+    showError('Invalid or Expired Link', "Please ask your tutor to share a fresh portal link.");
+  }
+})();
+</script>
+</body>
+</html>
