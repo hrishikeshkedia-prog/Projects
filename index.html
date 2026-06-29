@@ -361,12 +361,16 @@
           <label>Grade / Class *</label>
           <select id="s-grade">
             <option value="">Select grade...</option>
-            <option value="Primary (KG/Nursery)">Primary (KG / Nursery)</option>
+            <option value="Nursery">Nursery</option>
+            <option value="Jr.KG">Jr.KG</option>
+            <option value="Sr.KG">Sr.KG</option>
             <option value="Grade 1">Grade 1</option>
             <option value="Grade 2">Grade 2</option>
             <option value="Grade 3">Grade 3</option>
             <option value="Grade 4">Grade 4</option>
             <option value="Grade 5">Grade 5</option>
+            <option value="Grade 6">Grade 6</option>
+            <option value="Grade 7">Grade 7</option>
           </select>
         </div>
       </div>
@@ -461,11 +465,18 @@
       </div>
       <div class="form-group">
         <label>Status</label>
-        <select id="sess-status">
+        <select id="sess-status" onchange="document.getElementById('cancelled-by-wrap').style.display=this.value==='cancelled'?'block':'none'">
           <option value="scheduled">Scheduled</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
+        </select>
+      </div>
+      <div class="form-group" id="cancelled-by-wrap" style="display:none;">
+        <label>Cancelled By</label>
+        <select id="sess-cancelled-by">
+          <option value="parent">Parent (Fee is non-refundable)</option>
+          <option value="tutor">Tutor (Reschedule / Adjust next month)</option>
         </select>
       </div>
       <div class="form-group">
@@ -912,7 +923,11 @@ function renderSessions() {
         <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
         <div class="session-detail">${s.subject}${s.lessonPlan ? ' · ' + s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
       </div>
-      <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+        <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
+        ${s.status==='cancelled'&&s.cancelledBy==='parent' ? `<span style="font-size:10px;color:#dc2626;">No refund</span>` : ''}
+        ${s.status==='cancelled'&&s.cancelledBy==='tutor' ? `<span style="font-size:10px;color:#d97706;">Reschedule/Adjust</span>` : ''}
+      </div>
       <div class="session-actions">
         <button class="btn-icon" onclick="viewSession('${s.id}')" title="View">👁</button>
         <button class="btn-icon" onclick="editSession('${s.id}')" title="Edit">✏️</button>
@@ -931,6 +946,8 @@ function openAddSession(dateStr) {
   document.getElementById('sess-start').value = '16:00';
   document.getElementById('sess-end').value = '17:00';
   document.getElementById('sess-status').value = 'scheduled';
+  document.getElementById('sess-cancelled-by').value = 'parent';
+  document.getElementById('cancelled-by-wrap').style.display = 'none';
   document.getElementById('sess-lesson-plan').value = '';
   document.getElementById('sess-notes').value = '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
@@ -950,6 +967,8 @@ function editSession(id) {
   document.getElementById('sess-start').value = s.startTime;
   document.getElementById('sess-end').value = s.endTime;
   document.getElementById('sess-status').value = s.status;
+  document.getElementById('sess-cancelled-by').value = s.cancelledBy || 'parent';
+  document.getElementById('cancelled-by-wrap').style.display = s.status === 'cancelled' ? 'block' : 'none';
   document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
   document.getElementById('sess-notes').value = s.notes || '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
@@ -968,6 +987,7 @@ function saveSession() {
   const id = document.getElementById('sess-id').value;
   const recurDays = Array.from(document.querySelectorAll('.rec-day:checked')).map(c => parseInt(c.value));
 
+  const sessStatus = document.getElementById('sess-status').value;
   const baseSession = {
     id: id || uid(),
     studentId,
@@ -975,7 +995,8 @@ function saveSession() {
     date,
     startTime: start,
     endTime: end,
-    status: document.getElementById('sess-status').value,
+    status: sessStatus,
+    cancelledBy: sessStatus === 'cancelled' ? document.getElementById('sess-cancelled-by').value : '',
     lessonPlan: document.getElementById('sess-lesson-plan').value.trim(),
     notes: document.getElementById('sess-notes').value.trim(),
     comment: id ? (getSession(id)?.comment || '') : '',
@@ -1038,7 +1059,7 @@ function viewSession(id) {
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmtDate(s.date)}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Subject</div><div style="font-size:15px;font-weight:600;margin-top:3px">${s.subject}</div></div>
-      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span></div></div>
+      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px;display:flex;flex-direction:column;gap:3px;"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span>${s.status==='cancelled'&&s.cancelledBy?`<span style="font-size:11px;color:var(--muted)">${s.cancelledBy==='parent'?'By parent – fee non-refundable':'By tutor – reschedule/adjust next month'}</span>`:''}</div></div>
     </div>
     ${s.lessonPlan ? `
       <div style="margin-top:14px;">
@@ -1088,8 +1109,8 @@ function renderFees() {
   if (!students.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">No students yet</td></tr>`; return; }
 
   tbody.innerHTML = students.map(s => {
-    const monthSess = sessions.filter(x => x.studentId === s.id && x.date.startsWith(selectedMonth) && x.status !== 'cancelled');
-    const completedSess = monthSess.filter(x => x.status === 'completed');
+    const monthSess = sessions.filter(x => x.studentId === s.id && x.date.startsWith(selectedMonth) && (x.status !== 'cancelled' || x.cancelledBy === 'parent'));
+    const completedSess = monthSess.filter(x => x.status === 'completed' || (x.status === 'cancelled' && x.cancelledBy === 'parent'));
     let amount = 0;
     if (s.feeType === 'monthly') amount = s.fee || 0;
     else amount = (s.fee || 0) * completedSess.length;
@@ -1222,7 +1243,7 @@ function sharePortal(studentId) {
   const sessionsThisMonth = sessions.filter(x =>
     x.studentId === studentId &&
     x.date.startsWith(currentMonth) &&
-    x.status !== 'cancelled'
+    (x.status !== 'cancelled' || x.cancelledBy === 'parent')
   ).length;
 
   const payload = {
