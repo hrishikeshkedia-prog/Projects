@@ -523,6 +523,32 @@
   </div>
 </div>
 
+<!-- Share Portal Modal -->
+<div class="modal-overlay" id="modal-share-portal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>🔗 Share Parent Portal</h3>
+      <button class="btn-icon" onclick="closeModal('modal-share-portal')">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Share this link with the parent. It shows their child's upcoming classes, topics covered, and fee status.</p>
+      <div style="display:flex;gap:8px;">
+        <input id="portal-link-input" type="text" readonly style="flex:1;font-size:12px;background:#f8fafc;color:#475569;cursor:pointer;" onclick="this.select()">
+        <button class="btn btn-primary btn-sm" onclick="copyPortalLink()">Copy</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn btn-outline btn-sm" onclick="window.open(document.getElementById('portal-link-input').value,'_blank')">Open in new tab</button>
+      </div>
+      <div style="margin-top:14px;padding:10px 12px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:12px;color:#78350f;">
+        ⚠️ This link is a snapshot. Re-share it whenever you want to send the parent an updated view.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-share-portal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -698,6 +724,7 @@ function renderStudents() {
       <div class="student-card-actions">
         <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
+        <button class="btn btn-primary btn-sm" onclick="sharePortal('${s.id}')">🔗 Share Portal</button>
       </div>
     </div>`;
   }).join('');
@@ -1169,6 +1196,55 @@ function togglePaid(studentId, month) {
   save(DB_FEES, feeRecords);
   renderFees();
   toast('Fee status updated');
+}
+
+// SHARE PORTAL
+function sharePortal(studentId) {
+  const s = getStudent(studentId);
+  if (!s) return;
+  const now = new Date();
+  const currentMonth = monthStr(now);
+
+  const studentSessions = sessions
+    .filter(x => x.studentId === studentId)
+    .map(x => ({
+      date: x.date,
+      startTime: x.startTime,
+      endTime: x.endTime,
+      status: x.status,
+      lessonPlan: x.lessonPlan || '',
+      comment: x.comment || '',
+    }));
+
+  const feeKey = `${studentId}_${currentMonth}`;
+  const feeRec = feeRecords.find(f => f.id === feeKey);
+  const paid = feeRec?.paid || false;
+  const sessionsThisMonth = sessions.filter(x =>
+    x.studentId === studentId &&
+    x.date.startsWith(currentMonth) &&
+    x.status !== 'cancelled'
+  ).length;
+
+  const payload = {
+    v: 1,
+    student: { name: s.name, grade: s.grade || '', subjects: s.subjects || '', color: s.color || '#6366f1', parent: s.parent || '' },
+    sessions: studentSessions,
+    fees: { fee: s.fee || 0, feeType: s.feeType || 'session', currentMonth, paid, sessionsThisMonth },
+    generatedAt: now.toISOString(),
+  };
+
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url = 'https://hrishikeshkedia-prog.github.io/Projects/portal.html?portal=' + encoded;
+  document.getElementById('portal-link-input').value = url;
+  openModal('modal-share-portal');
+}
+
+function copyPortalLink() {
+  const input = document.getElementById('portal-link-input');
+  input.select();
+  navigator.clipboard.writeText(input.value)
+    .then(() => toast('Link copied to clipboard!'))
+    .catch(() => { document.execCommand('copy'); toast('Link copied!'); });
 }
 
 // MODAL HELPERS
