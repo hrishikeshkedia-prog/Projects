@@ -53,6 +53,7 @@
   .error-title { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
   .error-msg { font-size: 14px; color: #64748b; line-height: 1.6; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -215,7 +216,14 @@ function renderPortal(data) {
     return;
   }
   try {
-    const data = JSON.parse(decodeURIComponent(escape(atob(param))));
+    let data;
+    // Try LZString decompression first (v2 links), fall back to base64 (v1 links)
+    const lz = typeof LZString !== 'undefined' && LZString.decompressFromEncodedURIComponent(param);
+    if (lz) {
+      data = JSON.parse(lz);
+    } else {
+      data = JSON.parse(decodeURIComponent(escape(atob(param))));
+    }
     renderPortal(data);
   } catch(_) {
     showError('Invalid or Expired Link', "Please ask your tutor to share a fresh portal link.");
