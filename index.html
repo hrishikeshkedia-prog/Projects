@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TuitionPlanner – Monthly Schedule</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TuitionPlanner">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6366f1">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root {
     --primary: #6366f1;
@@ -679,7 +686,7 @@ function renderDashboard() {
   const todayBox = document.getElementById('today-sessions');
   const tSorted = todaySess.sort((a,b) => a.startTime.localeCompare(b.startTime));
   if (!tSorted.length) {
-    todayBox.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="icon">💭</div><p>No sessions today</p></div>`;
+    todayBox.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="icon">📭</div><p>No sessions today</p></div>`;
   } else {
     todayBox.innerHTML = tSorted.map(s => {
       const st = getStudent(s.studentId);
@@ -874,7 +881,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -1124,7 +1131,6 @@ function renderFees() {
     const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
-    // Fees collected upfront: bill all sessions except tutor-cancelled
     const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
@@ -1321,4 +1327,3 @@ renderDashboard();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </body>
-</html>
