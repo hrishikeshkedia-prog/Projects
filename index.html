@@ -893,14 +893,13 @@ function renderCalendar() {
     html += `<div class="cal-day${type!=='cur'?' other-month':''}${isToday?' today':''}${hasSess?' has-session':''}"
       onclick="${dateStr ? `calDayClick('${dateStr}')` : ''}" style="${!dateStr?'cursor:default':''}">
       <div class="cal-date">${day}</div>
-      ${daySessions.slice(0,2).map(s => {
+      ${daySessions.map(s => {
         const st = getStudent(s.studentId);
         const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
         const lpIcon = s.lessonPlan ? ' 📚' : '';
         return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
           onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
-      ${daySessions.length > 2 ? `<div class="cal-more">+${daySessions.length-2} more</div>` : ''}
     </div>`;
   });
 
@@ -1121,9 +1120,12 @@ function renderFees() {
   tbody.innerHTML = students.map(s => {
     const allMonthSess = sessions.filter(x => x.studentId === s.id && x.date.startsWith(selectedMonth));
     const completed     = allMonthSess.filter(x => x.status === 'completed');
+    const scheduled     = allMonthSess.filter(x => x.status === 'scheduled');
+    const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
-    const billed = completed.length + parentCancel.length;
+    // Fees collected upfront: bill all sessions except tutor-cancelled
+    const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
     if (s.feeType === 'monthly') amount = s.fee || 0;
@@ -1134,14 +1136,16 @@ function renderFees() {
     const paid = feeRec?.paid || false;
 
     const sessDetails = [
-      completed.length     ? `${completed.length} completed`            : '',
-      parentCancel.length  ? `${parentCancel.length} parent-cancelled`  : '',
+      completed.length    ? `${completed.length} done`             : '',
+      scheduled.length    ? `${scheduled.length} upcoming`         : '',
+      missed.length       ? `${missed.length} missed`              : '',
+      parentCancel.length ? `${parentCancel.length} parent-cancel` : '',
     ].filter(Boolean).join(' · ') || 'No sessions';
 
     return `<tr>
       <td><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:${s.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">${s.name.charAt(0)}</div><span style="font-weight:600">${s.name}</span></div></td>
       <td>
-        <div style="font-weight:600">${billed} billed</div>
+        <div style="font-weight:600">${billed} sessions</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${sessDetails}</div>
         ${tutorCancel.length ? `<div style="font-size:11px;color:#d97706;font-weight:600;margin-top:2px">⚠️ ${tutorCancel.length} makeup owed</div>` : ''}
       </td>
