@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="TuitionPlanner">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#6366f1">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
   :root {
     --primary: #6366f1;
@@ -167,8 +167,6 @@
   .lp-no-plan { font-size: 13px; color: var(--muted); font-style: italic; padding: 8px 0; }
   .lp-comment-box { margin-top: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #78350f; }
   .lp-comment-label { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 4px; }
-  .sub-badge-eng { background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-  .sub-badge-maths { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
   /* ── Empty state ── */
   .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
@@ -249,7 +247,7 @@
         <h2>Good morning! 👋</h2>
         <p id="dash-date"></p>
       </div>
-      <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+      <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
     </div>
     <div class="stats-grid" id="stats-grid"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
@@ -268,7 +266,7 @@
   <section class="page" id="page-students">
     <div class="page-header">
       <div><h2>Students</h2><p>Manage your student list</p></div>
-      <button class="btn btn-primary" onclick="openAddStudent()">&#xFF0B; Add Student</button>
+      <button class="btn btn-primary" onclick="openAddStudent()">＋ Add Student</button>
     </div>
     <div class="students-grid" id="students-grid"></div>
   </section>
@@ -279,7 +277,7 @@
       <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="calendar-header">
@@ -305,7 +303,7 @@
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
       </div>
     </div>
     <div class="sessions-list" id="sessions-list"></div>
@@ -338,11 +336,6 @@
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <select id="lp-filter-student" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
           <option value="">All Students</option>
-        </select>
-        <select id="lp-filter-subject" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;">
-          <option value="">All Subjects</option>
-          <option value="English">English</option>
-          <option value="Maths">Maths</option>
         </select>
         <select id="lp-filter-month" onchange="renderLessonPlans()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
       </div>
@@ -446,19 +439,9 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="sess-id">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Student *</label>
-          <select id="sess-student"><option value="">Select student...</option></select>
-        </div>
-        <div class="form-group">
-          <label>Subject *</label>
-          <select id="sess-subject">
-            <option value="">Select subject...</option>
-            <option value="English">English</option>
-            <option value="Maths">Maths</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Student *</label>
+        <select id="sess-student"><option value="">Select student...</option></select>
       </div>
       <div class="form-group">
         <label>Date *</label>
@@ -508,7 +491,7 @@
       </div>
       <div class="form-group">
         <label>Lesson Plan</label>
-        <textarea id="sess-lesson-plan" placeholder="What will you teach today? e.g. Chapter 4 – Fractions: Introduction, practice sums. Phonics – blends 'bl', 'cl'." style="min-height:90px;"></textarea>
+        <textarea id="sess-lesson-plan" placeholder="What will you teach today? e.g. Chapter 4 – Fractions: Introduction, practice sums." style="min-height:90px;"></textarea>
       </div>
       <div class="form-group">
         <label>Notes / Reminders</label>
@@ -672,15 +655,9 @@ function renderDashboard() {
 
   const todaySess = sessions.filter(s => s.date === today && s.status !== 'cancelled');
   const monthSess = sessions.filter(s => s.date.startsWith(monthStr(now)) && s.status !== 'cancelled');
-  const monthEarned = monthSess.filter(s => s.status === 'completed').reduce((a, s) => {
-    const st = getStudent(s.studentId);
-    return a + (st && st.feeType === 'session' ? (st.fee || 0) : 0);
-  }, 0);
   document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Active Students</div><div class="stat-value">${students.length}</div><div class="stat-sub">enrolled</div></div>
     <div class="stat-card"><div class="stat-label">Today's Sessions</div><div class="stat-value">${todaySess.length}</div><div class="stat-sub">${now.toLocaleDateString('en-IN',{weekday:'long'})}</div></div>
     <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthSess.length}</div><div class="stat-sub">sessions planned</div></div>
-    <div class="stat-card"><div class="stat-label">Earned (${now.toLocaleDateString('en-IN',{month:'short'})})</div><div class="stat-value">₹${monthEarned.toLocaleString('en-IN')}</div><div class="stat-sub">from completed sessions</div></div>
   `;
 
   const todayBox = document.getElementById('today-sessions');
@@ -695,7 +672,7 @@ function renderDashboard() {
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
           <div class="today-name">${st?.name||'Unknown'}</div>
-          <div class="today-subj">${s.subject} · ${s.startTime}–${s.endTime}</div>
+          <div class="today-subj">${s.startTime}–${s.endTime}</div>
         </div>
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
       </div>`;
@@ -720,7 +697,7 @@ function renderDashboard() {
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:600">${st?.name||'Unknown'}</div>
-          <div style="font-size:12px;color:var(--muted)">${s.subject} · ${fmt12(s.startTime)}</div>
+          <div style="font-size:12px;color:var(--muted)">${fmt12(s.startTime)}</div>
         </div>
       </div>`;
     }).join('');
@@ -750,9 +727,9 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;&#xFE0F; Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
-        <button class="btn btn-primary btn-sm" onclick="sharePortal('${s.id}')">🔗 Share Portal</button>
+        <button class="btn btn-primary btn-sm" onclick="sharePortal('${s.id}')">&#x1F517; Share Portal</button>
       </div>
     </div>`;
   }).join('');
@@ -902,10 +879,9 @@ function renderCalendar() {
       <div class="cal-date">${day}</div>
       ${daySessions.map(s => {
         const st = getStudent(s.studentId);
-        const subTag = s.subject === 'English' ? 'E' : s.subject === 'Maths' ? 'M' : s.subject?.charAt(0)||'';
         const lpIcon = s.lessonPlan ? ' 📚' : '';
         return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'}"
-          onclick="event.stopPropagation();viewSession('${s.id}')"><b>[${subTag}]</b> ${st?.name||'?'}${lpIcon}</div>`;
+          onclick="event.stopPropagation();viewSession('${s.id}')">${st?.name||'?'}${lpIcon}</div>`;
       }).join('')}
     </div>`;
   });
@@ -937,7 +913,7 @@ function renderSessions() {
       <div class="session-time">${fmtDate(s.date)}<br><span style="font-weight:400;color:var(--muted)">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</span></div>
       <div class="session-info">
         <div class="session-name">${st?.name||'Unknown Student'} <span style="font-weight:400;font-size:13px;color:var(--muted)">· ${st?.grade||''}</span></div>
-        <div class="session-detail">${s.subject}${s.lessonPlan ? ' · ' + s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
+        <div class="session-detail">${s.lessonPlan ? s.lessonPlan.slice(0,60) + (s.lessonPlan.length>60?'…':'') : ''}${s.comment ? ' 💬' : ''}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
         <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
@@ -957,7 +933,6 @@ function openAddSession(dateStr) {
   document.getElementById('modal-session-title').textContent = 'Add Session';
   document.getElementById('sess-id').value = '';
   document.getElementById('sess-student').value = '';
-  document.getElementById('sess-subject').value = '';
   document.getElementById('sess-date').value = dateStr || todayStr();
   document.getElementById('sess-start').value = '16:00';
   document.getElementById('sess-end').value = '17:00';
@@ -978,7 +953,6 @@ function editSession(id) {
   document.getElementById('sess-id').value = s.id;
   refreshStudentDropdowns();
   document.getElementById('sess-student').value = s.studentId;
-  document.getElementById('sess-subject').value = s.subject;
   document.getElementById('sess-date').value = s.date;
   document.getElementById('sess-start').value = s.startTime;
   document.getElementById('sess-end').value = s.endTime;
@@ -993,12 +967,12 @@ function editSession(id) {
 
 function saveSession() {
   const studentId = document.getElementById('sess-student').value;
-  const subject = document.getElementById('sess-subject').value.trim();
   const date = document.getElementById('sess-date').value;
   const start = document.getElementById('sess-start').value;
   const end = document.getElementById('sess-end').value;
-  if (!studentId || !subject || !date || !start || !end) { alert('Please fill all required fields'); return; }
+  if (!studentId || !date || !start || !end) { alert('Please fill all required fields'); return; }
   if (start >= end) { alert('End time must be after start time'); return; }
+  const subject = '';
 
   const id = document.getElementById('sess-id').value;
   const recurDays = Array.from(document.querySelectorAll('.rec-day:checked')).map(c => parseInt(c.value));
@@ -1074,7 +1048,6 @@ function viewSession(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmtDate(s.date)}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="font-size:15px;font-weight:600;margin-top:3px">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
-      <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Subject</div><div style="font-size:15px;font-weight:600;margin-top:3px">${s.subject}</div></div>
       <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px;display:flex;flex-direction:column;gap:3px;"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span>${s.status==='cancelled'&&s.cancelledBy?`<span style="font-size:11px;color:var(--muted)">${s.cancelledBy==='parent'?'By parent – fee non-refundable':'By tutor – reschedule/adjust next month'}</span>`:''}</div></div>
     </div>
     ${s.lessonPlan ? `
@@ -1185,14 +1158,12 @@ function renderLessonPlans() {
     }
   }
 
-  const filterSt   = document.getElementById('lp-filter-student')?.value || '';
-  const filterSubj = document.getElementById('lp-filter-subject')?.value || '';
-  const filterMon  = document.getElementById('lp-filter-month')?.value || monthStr(now);
+  const filterSt  = document.getElementById('lp-filter-student')?.value || '';
+  const filterMon = document.getElementById('lp-filter-month')?.value || monthStr(now);
 
   let list = sessions
     .filter(s => s.date.startsWith(filterMon))
     .filter(s => !filterSt || s.studentId === filterSt)
-    .filter(s => !filterSubj || s.subject === filterSubj)
     .sort((a, b) => (a.date + a.startTime).localeCompare(b.date + b.startTime));
 
   const box = document.getElementById('lp-list');
@@ -1208,7 +1179,6 @@ function renderLessonPlans() {
     const label = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
     const cards = byDate[date].map(s => {
       const st = getStudent(s.studentId);
-      const subClass = s.subject === 'English' ? 'sub-badge-eng' : 'sub-badge-maths';
       return `<div class="lp-card">
         <div class="lp-card-header">
           <div style="width:36px;height:36px;border-radius:50%;background:${st?.color||'#6366f1'};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">${st?.name?.charAt(0)||'?'}</div>
@@ -1216,8 +1186,7 @@ function renderLessonPlans() {
             <div class="lp-card-name">${st?.name||'Unknown'} <span style="font-weight:400;font-size:12px;color:var(--muted)">· ${st?.grade||''}</span></div>
             <div class="lp-card-date">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div>
           </div>
-          <span class="${subClass}">${s.subject}</span>
-          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};margin-left:4px">${STATUS_LABEL[s.status]}</span>
+          <span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]}">${STATUS_LABEL[s.status]}</span>
         </div>
         <div class="lp-card-body">
           ${s.lessonPlan
@@ -1229,8 +1198,8 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
-            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;&#xFE0F; Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1F4AC; Add Comment</button>
           </div>
         </div>
       </div>`;
@@ -1327,3 +1296,4 @@ renderDashboard();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
 </body>
+</html>
