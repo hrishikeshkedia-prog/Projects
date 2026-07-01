@@ -167,6 +167,8 @@
   .lp-no-plan { font-size: 13px; color: var(--muted); font-style: italic; padding: 8px 0; }
   .lp-comment-box { margin-top: 10px; background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; color: #78350f; }
   .lp-comment-label { font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; margin-bottom: 4px; }
+  .sub-badge-eng { background: #dbeafe; color: #1d4ed8; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .sub-badge-maths { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
   /* ── Empty state ── */
   .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
@@ -247,7 +249,7 @@
         <h2>Good morning! 👋</h2>
         <p id="dash-date"></p>
       </div>
-      <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+      <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
     </div>
     <div class="stats-grid" id="stats-grid"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;" class="dash-cols">
@@ -266,7 +268,7 @@
   <section class="page" id="page-students">
     <div class="page-header">
       <div><h2>Students</h2><p>Manage your student list</p></div>
-      <button class="btn btn-primary" onclick="openAddStudent()">＋ Add Student</button>
+      <button class="btn btn-primary" onclick="openAddStudent()">&#xFF0B; Add Student</button>
     </div>
     <div class="students-grid" id="students-grid"></div>
   </section>
@@ -277,7 +279,7 @@
       <div><h2>Monthly Schedule</h2><p>Click a day to add a session</p></div>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-outline btn-sm" onclick="printSchedule()">🖨️ Print</button>
-        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
       </div>
     </div>
     <div class="calendar-header">
@@ -303,7 +305,7 @@
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
         </select>
-        <button class="btn btn-primary" onclick="openAddSession()">＋ Add Session</button>
+        <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
       </div>
     </div>
     <div class="sessions-list" id="sessions-list"></div>
@@ -491,7 +493,7 @@
       </div>
       <div class="form-group">
         <label>Lesson Plan</label>
-        <textarea id="sess-lesson-plan" placeholder="What will you teach today? e.g. Chapter 4 – Fractions: Introduction, practice sums." style="min-height:90px;"></textarea>
+        <textarea id="sess-lesson-plan" placeholder="What will you teach today? e.g. Chapter 4 – Fractions: Introduction, practice sums. Phonics – blends 'bl', 'cl'." style="min-height:90px;"></textarea>
       </div>
       <div class="form-group">
         <label>Notes / Reminders</label>
@@ -727,9 +729,9 @@ function renderStudents() {
       </div>
       ${s.fee ? `<div class="student-fee">₹${Number(s.fee).toLocaleString('en-IN')} / ${s.feeType === 'monthly' ? 'month' : 'session'}</div>` : ''}
       <div class="student-card-actions">
-        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">&#x270F;&#xFE0F; Edit</button>
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️ Edit</button>
         <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑 Delete</button>
-        <button class="btn btn-primary btn-sm" onclick="sharePortal('${s.id}')">&#x1F517; Share Portal</button>
+        <button class="btn btn-primary btn-sm" onclick="sharePortal('${s.id}')">🔗 Share Portal</button>
       </div>
     </div>`;
   }).join('');
@@ -858,7 +860,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -1104,6 +1106,7 @@ function renderFees() {
     const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
+    // Fees collected upfront: bill all sessions except tutor-cancelled
     const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
@@ -1198,8 +1201,8 @@ function renderLessonPlans() {
               ${s.comment}
             </div>` : ''}
           <div style="margin-top:10px;display:flex;gap:6px;">
-            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">&#x270F;&#xFE0F; Edit Plan</button>
-            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">&#x1F4AC; Add Comment</button>
+            <button class="btn btn-outline btn-sm" onclick="editSession('${s.id}')">✏️ Edit Plan</button>
+            <button class="btn btn-outline btn-sm" onclick="viewSession('${s.id}')">💬 Add Comment</button>
           </div>
         </div>
       </div>`;
