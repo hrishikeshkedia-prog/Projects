@@ -304,6 +304,7 @@
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
+          <option value="rescheduled">Rescheduled</option>
         </select>
         <button class="btn btn-primary" onclick="openAddSession()">&#xFF0B; Add Session</button>
       </div>
@@ -466,6 +467,7 @@
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
           <option value="missed">Missed</option>
+          <option value="rescheduled">Rescheduled</option>
         </select>
       </div>
       <div class="form-group" id="cancelled-by-wrap" style="display:none;">
@@ -636,9 +638,9 @@ function monthStr(dt) { return dt.getFullYear()+'-'+(dt.getMonth()+1).toString()
 function getStudent(id) { return students.find(s => s.id === id); }
 function getSession(id) { return sessions.find(s => s.id === id); }
 
-const STATUS_COLORS = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb' };
-const STATUS_TEXT   = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706' };
-const STATUS_LABEL  = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed' };
+const STATUS_COLORS = { scheduled:'#eef2ff', completed:'#dcfce7', cancelled:'#fef2f2', missed:'#fffbeb', rescheduled:'#e0f2fe' };
+const STATUS_TEXT   = { scheduled:'#6366f1', completed:'#16a34a', cancelled:'#dc2626', missed:'#d97706', rescheduled:'#0284c7' };
+const STATUS_LABEL  = { scheduled:'Scheduled', completed:'Completed', cancelled:'Cancelled', missed:'Missed', rescheduled:'Rescheduled' };
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -1057,6 +1059,11 @@ function viewSession(id) {
         <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:5px;">📚 Lesson Plan</div>
         <div style="padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${s.lessonPlan}</div>
       </div>` : ''}
+    ${s.comment ? `
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;color:#92400e;text-transform:uppercase;font-weight:600;margin-bottom:5px;">💬 Teacher's Comment</div>
+        <div style="padding:12px;background:#fefce8;border:1px solid #fde68a;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;color:#78350f;">${s.comment}</div>
+      </div>` : ''}
     ${s.notes ? `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted)">📝 ${s.notes}</div>` : ''}
   `;
   document.getElementById('view-sess-comment').value = s.comment || '';
@@ -1106,7 +1113,6 @@ function renderFees() {
     const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
-    // Fees collected upfront: bill all sessions except tutor-cancelled
     const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
