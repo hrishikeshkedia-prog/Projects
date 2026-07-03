@@ -523,7 +523,11 @@
         <textarea id="view-sess-comment" placeholder="How did the session go? Note student's progress, areas to improve, homework given..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
         <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionComment()">Save Comment</button>
       </div>
-      <div id="view-sess-lesson-plan"></div>
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">📚 Lesson Plan</label>
+        <textarea id="view-sess-lesson-plan" placeholder="What topics will be covered? Exercises, goals for this session..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionLessonPlan()">Save Lesson Plan</button>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="view-sess-delete">🗑 Delete</button>
@@ -1058,11 +1062,7 @@ function viewSession(id) {
     ${s.notes ? `<div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted)">📝 ${s.notes}</div>` : ''}
   `;
   document.getElementById('view-sess-comment').value = s.comment || '';
-  document.getElementById('view-sess-lesson-plan').innerHTML = s.lessonPlan ? `
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;margin-bottom:6px;">📚 Lesson Plan</div>
-      <div style="padding:12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:13px;line-height:1.6;white-space:pre-wrap;">${s.lessonPlan}</div>
-    </div>` : '';
+  document.getElementById('view-sess-lesson-plan').value = s.lessonPlan || '';
   document.getElementById('view-sess-delete').onclick = () => deleteSession(id);
   document.getElementById('view-sess-edit').onclick = () => { closeModal('modal-view-session'); editSession(id); };
   document.getElementById('view-sess-complete').style.display = s.status === 'completed' ? 'none' : '';
@@ -1084,6 +1084,15 @@ function saveSessionComment() {
   sessions[i].comment = document.getElementById('view-sess-comment').value.trim();
   save(DB_SESSIONS, sessions);
   toast('Comment saved');
+}
+
+function saveSessionLessonPlan() {
+  if (!viewingSessionId) return;
+  const i = sessions.findIndex(x => x.id === viewingSessionId);
+  if (i < 0) return;
+  sessions[i].lessonPlan = document.getElementById('view-sess-lesson-plan').value.trim();
+  save(DB_SESSIONS, sessions);
+  toast('Lesson plan saved');
 }
 
 // FEES
@@ -1109,6 +1118,7 @@ function renderFees() {
     const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
+    // Fees collected upfront: bill all sessions except tutor-cancelled
     const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
