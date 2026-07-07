@@ -519,14 +519,14 @@
     <div class="modal-body" id="view-session-body"></div>
     <div style="padding:0 24px 20px;">
       <div style="border-top:1px solid var(--border);padding-top:16px;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">💬 Teacher's Comment</label>
-        <textarea id="view-sess-comment" placeholder="How did the session go? Note student's progress, areas to improve, homework given..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
-        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionComment()">Save Comment</button>
-      </div>
-      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
         <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">📚 Lesson Plan</label>
         <textarea id="view-sess-lesson-plan" placeholder="What topics will be covered? Exercises, goals for this session..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
         <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionLessonPlan()">Save Lesson Plan</button>
+      </div>
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">💬 Teacher's Comment</label>
+        <textarea id="view-sess-comment" placeholder="How did the session go? Note student's progress, areas to improve, homework given..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;min-height:80px;font-family:inherit;"></textarea>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="saveSessionComment()">Save Comment</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -676,7 +676,7 @@ function renderDashboard() {
   } else {
     todayBox.innerHTML = tSorted.map(s => {
       const st = getStudent(s.studentId);
-      return `<div class="today-item">
+      return `<div class="today-item" onclick="navigate('schedule');setTimeout(()=>viewSession('${s.id}'),50)" style="cursor:pointer;">
         <div class="dot" style="background:${st?.color||'#6366f1'}"></div>
         <div class="today-time">${fmt12(s.startTime)}</div>
         <div class="today-info">
@@ -867,7 +867,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
