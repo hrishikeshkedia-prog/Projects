@@ -294,7 +294,8 @@
   <section class="page" id="page-sessions">
     <div class="page-header">
       <div><h2>All Sessions</h2><p>Detailed session log</p></div>
-      <div style="display:flex;gap:8px;align-items:center;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select id="session-filter-month" onchange="renderSessions()" style="width:auto;padding:7px 10px;font-size:13px;"></select>
         <select id="session-filter-student" onchange="renderSessions()" style="width:auto;padding:7px 10px;font-size:13px;">
           <option value="">All Students</option>
         </select>
@@ -867,7 +868,7 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrev = new Date(year, month, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'00')));
+  const monthSessions = sessions.filter(s => s.date.startsWith(year + '-' + (month+1).toString().padStart(2,'0')));
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -905,9 +906,23 @@ function calDayClick(dateStr) {
 // SESSIONS
 function renderSessions() {
   refreshStudentDropdowns();
+  const now = new Date();
+  const mSel = document.getElementById('session-filter-month');
+  if (mSel && !mSel.options.length) {
+    for (let i = -5; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const o = document.createElement('option');
+      o.value = monthStr(d);
+      o.textContent = d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      if (monthStr(d) === monthStr(now)) o.selected = true;
+      mSel.appendChild(o);
+    }
+  }
+  const filterMonth = mSel?.value || monthStr(now);
   const filterSt = document.getElementById('session-filter-student').value;
   const filterStat = document.getElementById('session-filter-status').value;
   let list = sessions.slice().sort((a,b) => (b.date+b.startTime).localeCompare(a.date+a.startTime));
+  list = list.filter(s => s.date.startsWith(filterMonth));
   if (filterSt) list = list.filter(s => s.studentId === filterSt);
   if (filterStat) list = list.filter(s => s.status === filterStat);
   const box = document.getElementById('sessions-list');
@@ -1118,7 +1133,6 @@ function renderFees() {
     const missed        = allMonthSess.filter(x => x.status === 'missed');
     const parentCancel  = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'parent');
     const tutorCancel   = allMonthSess.filter(x => x.status === 'cancelled' && x.cancelledBy === 'tutor');
-    // Fees collected upfront: bill all sessions except tutor-cancelled
     const billed = completed.length + scheduled.length + missed.length + parentCancel.length;
 
     let amount = 0;
