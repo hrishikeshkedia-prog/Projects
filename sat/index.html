@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT Prep — Home</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%98%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="authView" class="container-narrow" style="display:none;">
+  <div class="text-center mt-24" style="margin-bottom:24px;">
+    <h1><span style="color:var(--primary)">SAT</span> Prep</h1>
+    <p class="muted">Practice tests, timed modules, and progress tracking built from your question bank.</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <div class="tab-btn active" data-tab="login">Log In</div>
+      <div class="tab-btn" data-tab="signup">Sign Up</div>
+    </div>
+
+    <div id="errorBox" class="error-box" style="display:none;"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-block btn-lg">Log In</button>
+      <p class="text-center mt-16"><a href="#" id="forgotLink">Forgot password?</a></p>
+    </form>
+
+    <form id="signupForm" style="display:none;">
+      <div class="field">
+        <label for="signupName">Name</label>
+        <input type="text" id="signupName" required autocomplete="name" />
+      </div>
+      <div class="field">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" required autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" required minlength="6" autocomplete="new-password" />
+        <div class="field-hint">At least 6 characters.</div>
+      </div>
+      <button type="submit" class="btn btn-block btn-lg">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<div id="appView" style="display:none;">
+  <div class="navbar">
+    <div class="brand"><span class="dot">●</span> SAT Prep</div>
+    <nav>
+      <a href="index.html" class="active">Home</a>
+      <a href="test-setup.html">Practice Test</a>
+      <a href="progress.html">Progress</a>
+      <a href="formulas.html">Formulas &amp; Strategies</a>
+      <button id="logoutBtn" class="btn-secondary btn btn-sm">Log Out</button>
+    </nav>
+  </div>
+
+  <div class="container">
+    <h2 id="welcomeMsg">Welcome back</h2>
+    <p class="muted">Pick up where you left off, or start something new.</p>
+
+    <div class="grid grid-3 mt-16">
+      <a class="option-card" href="test-setup.html?mode=full">
+        <h4>🧪 Full Practice Test</h4>
+        <p>Both sections, official timing &amp; length.</p>
+      </a>
+      <a class="option-card" href="test-setup.html?mode=section">
+        <h4>📘 Single Section</h4>
+        <p>Reading &amp; Writing, or Math only.</p>
+      </a>
+      <a class="option-card" href="test-setup.html?mode=quick10">
+        <h4>⚡ Quick 10</h4>
+        <p>10 questions — perfect for a spare few minutes.</p>
+      </a>
+      <a class="option-card" href="test-setup.html?mode=module">
+        <h4>📗 Single Module</h4>
+        <p>One official-length module of one subject.</p>
+      </a>
+      <a class="option-card" href="test-setup.html?mode=custom">
+        <h4>🎛️ Custom Test</h4>
+        <p>Choose subject, domains, length, and timing yourself.</p>
+      </a>
+      <a class="option-card" href="formulas.html">
+        <h4>📐 Formulas &amp; Strategies</h4>
+        <p>Reference sheet for Math and Reading &amp; Writing.</p>
+      </a>
+    </div>
+
+    <div class="card mt-24" id="resumeCard" style="display:none;">
+      <div class="card-title">Resume in-progress test</div>
+      <div class="card-sub" id="resumeDetail"></div>
+      <a href="test.html" class="btn">Resume Test</a>
+      <button class="btn btn-secondary" id="discardResumeBtn">Discard</button>
+    </div>
+
+    <div class="card mt-24">
+      <div class="flex-between">
+        <div>
+          <div class="card-title">Your Progress</div>
+          <div class="card-sub">Overall accuracy across all practice</div>
+        </div>
+        <a href="progress.html">View full dashboard →</a>
+      </div>
+      <div id="statsRow" class="grid grid-4 mt-16">
+        <div class="stat-tile"><div class="num" id="statTests">—</div><div class="label">Tests taken</div></div>
+        <div class="stat-tile"><div class="num" id="statQuestions">—</div><div class="label">Questions answered</div></div>
+        <div class="stat-tile"><div class="num" id="statAccuracy">—</div><div class="label">Overall accuracy</div></div>
+        <div class="stat-tile"><div class="num" id="statStreak">—</div><div class="label">Weakest domain</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth, logIn, signUp, logOut, resetPassword, friendlyAuthError } from "./js/auth.js";
+import { fetchAttempts, summarizeAttempts } from "./js/progress.js";
+import { TestSession } from "./js/test-engine.js";
+
+const authView = document.getElementById("authView");
+const appView = document.getElementById("appView");
+const errorBox = document.getElementById("errorBox");
+
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    const isLogin = btn.dataset.tab === "login";
+    document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
+    document.getElementById("signupForm").style.display = isLogin ? "none" : "block";
+    errorBox.style.display = "none";
+  });
+});
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = "block";
+}
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.style.display = "none";
+  try {
+    await logIn(document.getElementById("loginEmail").value, document.getElementById("loginPassword").value);
+  } catch (err) {
+    showError(friendlyAuthError(err));
+  }
+});
+
+document.getElementById("signupForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.style.display = "none";
+  try {
+    await signUp(
+      document.getElementById("signupName").value,
+      document.getElementById("signupEmail").value,
+      document.getElementById("signupPassword").value
+    );
+  } catch (err) {
+    showError(friendlyAuthError(err));
+  }
+});
+
+document.getElementById("forgotLink").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value;
+  if (!email) return showError("Enter your email above first, then click 'Forgot password?' again.");
+  try {
+    await resetPassword(email);
+    errorBox.style.display = "none";
+    alert("Password reset email sent to " + email);
+  } catch (err) {
+    showError(friendlyAuthError(err));
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => logOut());
+
+watchAuth(async (user) => {
+  if (!user) {
+    authView.style.display = "block";
+    appView.style.display = "none";
+    return;
+  }
+  authView.style.display = "none";
+  appView.style.display = "block";
+  document.getElementById("welcomeMsg").textContent = `Welcome back, ${user.displayName || "student"}`;
+
+  const saved = TestSession.restore();
+  if (saved && !saved.submittedAt) {
+    document.getElementById("resumeCard").style.display = "block";
+    document.getElementById("resumeDetail").textContent =
+      `${saved.answeredCount} of ${saved.totalQuestions} questions answered`;
+    document.getElementById("discardResumeBtn").addEventListener("click", () => {
+      TestSession.clearSaved();
+      document.getElementById("resumeCard").style.display = "none";
+    });
+  }
+
+  try {
+    const attempts = await fetchAttempts(user.uid);
+    const s = summarizeAttempts(attempts);
+    document.getElementById("statTests").textContent = s.totalTests;
+    document.getElementById("statQuestions").textContent = s.totalQuestions;
+    document.getElementById("statAccuracy").textContent = s.totalQuestions ? s.overallAccuracy + "%" : "—";
+    const weakest = s.byDomain.slice().sort((a, b) => a.accuracy - b.accuracy)[0];
+    document.getElementById("statStreak").textContent = weakest ? weakest.label : "—";
+  } catch (err) {
+    console.error(err);
+  }
+});
+</script>
+</body>
+</html>

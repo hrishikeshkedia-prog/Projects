@@ -1,0 +1,11 @@
+{
+  "name": "sat-prep-scripts",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "seed": "node seed-questions.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.4.0"
+  }
+}

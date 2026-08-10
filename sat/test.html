@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT Prep — Test in Progress</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%98%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="test-shell">
+  <div class="test-topbar">
+    <div>
+      <strong id="moduleName">—</strong>
+      <span class="muted" id="questionCounter" style="margin-left:10px;"></span>
+    </div>
+    <div class="flex gap-12" style="align-items:center;">
+      <div id="timerBox" class="timer" style="display:none;">--:--</div>
+      <button class="btn btn-secondary btn-sm" id="paletteToggleBtn">Questions</button>
+      <button class="btn btn-danger btn-sm" id="exitBtn">Exit</button>
+    </div>
+  </div>
+
+  <div class="test-body">
+    <div class="question-pane" id="questionPane">
+      <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+
+  <div class="test-footer">
+    <div class="flex gap-8">
+      <button class="btn btn-secondary" id="prevBtn">← Previous</button>
+      <button class="btn btn-outline" id="flagBtn">🚩 Flag for review</button>
+    </div>
+    <button class="btn btn-lg" id="nextBtn">Next →</button>
+  </div>
+</div>
+
+<!-- Question palette drawer -->
+<div id="paletteDrawer" class="card" style="position:fixed; top:70px; right:20px; width:280px; display:none; z-index:25; max-height:70vh; overflow:auto;">
+  <div class="card-title">Questions</div>
+  <div class="q-palette" id="paletteDots"></div>
+  <div class="mt-16" style="font-size:0.8rem;" class="muted">
+    <div><span class="q-dot answered" style="display:inline-flex;width:16px;height:16px;margin-right:6px;"></span>Answered</div>
+    <div class="mt-8"><span class="q-dot" style="display:inline-flex;width:16px;height:16px;margin-right:6px;"></span>Unanswered</div>
+  </div>
+</div>
+
+<!-- Desmos calculator -->
+<button class="btn calc-toggle-btn" id="calcToggleBtn" style="display:none;">🧮 Calculator</button>
+<div class="calc-panel" id="calcPanel">
+  <div class="calc-panel-head">
+    <strong>Calculator</strong>
+    <button class="btn btn-secondary btn-sm" id="calcCloseBtn">✕</button>
+  </div>
+  <div class="calc-panel-body" id="calcContainer"></div>
+</div>
+
+<!-- Submit confirmation modal -->
+<div id="submitModal" style="display:none; position:fixed; inset:0; background:rgba(15,18,30,0.5); z-index:40; align-items:center; justify-content:center;">
+  <div class="card" style="max-width:420px;">
+    <div class="card-title">Submit this test?</div>
+    <p id="submitSummary" class="muted"></p>
+    <div class="flex gap-8 mt-16">
+      <button class="btn btn-secondary" id="cancelSubmitBtn">Keep working</button>
+      <button class="btn btn-danger" id="confirmSubmitBtn">Submit Test</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth } from "./js/auth.js";
+import { TestSession } from "./js/test-engine.js";
+import { saveAttempt } from "./js/progress.js";
+import { DESMOS_API_KEY } from "./js/firebase-config.js";
+
+let currentUser = null;
+let session = TestSession.restore();
+
+watchAuth((user) => {
+  currentUser = user;
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+  if (!session || session.submittedAt) {
+    window.location.href = "test-setup.html";
+    return;
+  }
+  init();
+});
+
+function init() {
+  renderQuestion();
+  session.startModuleTimer(onTick, onTimeUp);
+  document.getElementById("calcCloseBtn").addEventListener("click", () => {
+    document.getElementById("calcPanel").classList.remove("open");
+  });
+  document.getElementById("calcToggleBtn").addEventListener("click", openCalculator);
+}
+
+function onTick(secondsRemaining) {
+  const box = document.getElementById("timerBox");
+  const mm = Math.floor(secondsRemaining / 60);
+  const ss = secondsRemaining % 60;
+  box.textContent = `${mm}:${String(ss).padStart(2, "0")}`;
+  box.classList.toggle("low", secondsRemaining <= 60);
+}
+
+function onTimeUp() {
+  alert("Time's up for this module!");
+  handleModuleEnd(true);
+}
+
+function fmtSubject(s) {
+  return s === "rw" ? "Reading & Writing" : s === "math" ? "Math" : "Mixed";
+}
+
+function renderQuestion() {
+  const mod = session.module;
+  const q = session.question;
+  document.getElementById("moduleName").textContent = mod.name || fmtSubject(mod.subject);
+  document.getElementById("questionCounter").textContent =
+    `Question ${session.questionIndex + 1} of ${mod.questions.length}`;
+
+  const timerBox = document.getElementById("timerBox");
+  if (session.timed && mod.minutes != null) {
+    timerBox.style.display = "inline-block";
+    onTick(session.secondsRemaining ?? mod.minutes * 60);
+  } else {
+    timerBox.style.display = "none";
+  }
+
+  const showCalc = mod.subject === "math" && q.calculatorAllowed !== false;
+  document.getElementById("calcToggleBtn").style.display = showCalc ? "inline-flex" : "none";
+  if (!showCalc) document.getElementById("calcPanel").classList.remove("open");
+
+  const entry = session.answers[q.id] || {};
+  const pane = document.getElementById("questionPane");
+  pane.innerHTML = `
+    <div class="question-meta">${q.domain} &middot; ${q.skill}</div>
+    ${q.passage ? `<div class="passage">${escapeHtml(q.passage)}</div>` : ""}
+    <div class="prompt">${escapeHtml(q.prompt)}</div>
+    <div class="choice-list" id="choiceList"></div>
+  `;
+  const list = document.getElementById("choiceList");
+  q.choices.forEach((choice) => {
+    const div = document.createElement("div");
+    div.className = "choice" + (entry.selected === choice.key ? " selected" : "");
+    div.innerHTML = `<div class="key">${choice.key}</div><div>${escapeHtml(choice.text)}</div>`;
+    div.addEventListener("click", () => {
+      session.selectAnswer(choice.key);
+      renderQuestion();
+    });
+    list.appendChild(div);
+  });
+
+  document.getElementById("flagBtn").classList.toggle("selected", !!entry.flagged);
+  document.getElementById("flagBtn").style.background = entry.flagged ? "var(--warning-light)" : "";
+
+  document.getElementById("prevBtn").disabled = session.questionIndex === 0 && session.moduleIndex === 0;
+
+  const isLastQInModule = session.questionIndex === mod.questions.length - 1;
+  const isLastModule = !session.hasNextModule();
+  document.getElementById("nextBtn").textContent = isLastQInModule
+    ? isLastModule
+      ? "Review & Submit"
+      : "End Module →"
+    : "Next →";
+
+  renderPalette();
+}
+
+function renderPalette() {
+  const mod = session.module;
+  const dots = document.getElementById("paletteDots");
+  dots.innerHTML = "";
+  mod.questions.forEach((q, i) => {
+    const entry = session.answers[q.id] || {};
+    const dot = document.createElement("div");
+    dot.className =
+      "q-dot" +
+      (entry.selected ? " answered" : "") +
+      (i === session.questionIndex ? " current" : "") +
+      (entry.flagged ? " flagged" : "");
+    dot.textContent = i + 1;
+    dot.addEventListener("click", () => {
+      session.goTo(i);
+      renderQuestion();
+    });
+    dots.appendChild(dot);
+  });
+}
+
+document.getElementById("paletteToggleBtn").addEventListener("click", () => {
+  const drawer = document.getElementById("paletteDrawer");
+  drawer.style.display = drawer.style.display === "none" ? "block" : "none";
+});
+
+document.getElementById("flagBtn").addEventListener("click", () => {
+  session.toggleFlag();
+  renderQuestion();
+});
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if (session.questionIndex > 0) {
+    session.prev();
+    renderQuestion();
+  }
+});
+
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const mod = session.module;
+  const isLastQInModule = session.questionIndex === mod.questions.length - 1;
+  if (!isLastQInModule) {
+    session.next();
+    renderQuestion();
+    return;
+  }
+  handleModuleEnd(false);
+});
+
+function handleModuleEnd(forced) {
+  if (session.hasNextModule()) {
+    if (forced || confirm("End this module and move to the next one? You can't return to it after.")) {
+      session.advanceModule();
+      renderQuestion();
+      session.startModuleTimer(onTick, onTimeUp);
+    }
+    return;
+  }
+  openSubmitModal();
+}
+
+function openSubmitModal() {
+  const total = session.totalQuestions;
+  const answered = session.answeredCount;
+  document.getElementById("submitSummary").textContent =
+    answered === total
+      ? `You've answered all ${total} questions. Ready to see your results?`
+      : `You've answered ${answered} of ${total} questions. ${total - answered} will be marked incorrect if you submit now.`;
+  document.getElementById("submitModal").style.display = "flex";
+}
+
+document.getElementById("cancelSubmitBtn").addEventListener("click", () => {
+  document.getElementById("submitModal").style.display = "none";
+});
+
+document.getElementById("confirmSubmitBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("confirmSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting…";
+  const score = session.finish();
+  try {
+    const attemptId = await saveAttempt(currentUser.uid, session, score);
+    TestSession.clearSaved();
+    window.location.href = `review.html?attempt=${attemptId}`;
+  } catch (err) {
+    console.error(err);
+    alert("Couldn't save your results: " + (err.message || err) + "\nYour answers are still saved locally — try submitting again.");
+    btn.disabled = false;
+    btn.textContent = "Submit Test";
+  }
+});
+
+document.getElementById("exitBtn").addEventListener("click", () => {
+  if (confirm("Exit this test? Your progress is saved locally and you can resume from Home.")) {
+    session.stopTimer();
+    window.location.href = "index.html";
+  }
+});
+
+let desmosLoaded = false;
+let calculatorInstance = null;
+function openCalculator() {
+  document.getElementById("calcPanel").classList.add("open");
+  if (desmosLoaded) return;
+  desmosLoaded = true;
+  const script = document.createElement("script");
+  script.src = `https://www.desmos.com/api/v1.9/calculator.js?apiKey=${DESMOS_API_KEY}`;
+  script.onload = () => {
+    calculatorInstance = Desmos.GraphingCalculator(document.getElementById("calcContainer"));
+  };
+  document.head.appendChild(script);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+window.addEventListener("beforeunload", (e) => {
+  if (session && !session.submittedAt) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+</script>
+</body>
+</html>

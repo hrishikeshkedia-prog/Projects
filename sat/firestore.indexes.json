@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    { "collectionGroup": "questions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "subject", "order": "ASCENDING" },
+      { "fieldPath": "rand", "order": "ASCENDING" }
+    ]},
+    { "collectionGroup": "questions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "subject", "order": "ASCENDING" },
+      { "fieldPath": "domain", "order": "ASCENDING" },
+      { "fieldPath": "rand", "order": "ASCENDING" }
+    ]},
+    { "collectionGroup": "questions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "subject", "order": "ASCENDING" },
+      { "fieldPath": "difficulty", "order": "ASCENDING" },
+      { "fieldPath": "rand", "order": "ASCENDING" }
+    ]},
+    { "collectionGroup": "questions", "queryScope": "COLLECTION", "fields": [
+      { "fieldPath": "subject", "order": "ASCENDING" },
+      { "fieldPath": "domain", "order": "ASCENDING" },
+      { "fieldPath": "difficulty", "order": "ASCENDING" },
+      { "fieldPath": "rand", "order": "ASCENDING" }
+    ]}
+  ],
+  "fieldOverrides": []
+}

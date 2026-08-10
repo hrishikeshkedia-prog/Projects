@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT Prep — Set Up a Test</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%98%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand"><span class="dot">●</span> SAT Prep</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="test-setup.html" class="active">Practice Test</a>
+    <a href="progress.html">Progress</a>
+    <a href="formulas.html">Formulas &amp; Strategies</a>
+  </nav>
+</div>
+
+<div class="container-narrow">
+  <h2>Set up your practice</h2>
+
+  <div class="card">
+    <div class="card-title">1. Choose a format</div>
+    <div class="grid" style="grid-template-columns: 1fr; gap: 10px;" id="modeOptions">
+      <div class="option-card" data-mode="full">
+        <h4>🧪 Full Practice Test</h4>
+        <p>Reading &amp; Writing (2 modules, 27q/32min each) + Math (2 modules, 22q/35min each). ~2h14m timed.</p>
+      </div>
+      <div class="option-card" data-mode="section">
+        <h4>📘 Single Section</h4>
+        <p>Just Reading &amp; Writing, or just Math — both official-length modules for that section.</p>
+      </div>
+      <div class="option-card" data-mode="module">
+        <h4>📗 Single Module</h4>
+        <p>One official-length module (27q R&amp;W or 22q Math) for focused, shorter practice.</p>
+      </div>
+      <div class="option-card" data-mode="quick10">
+        <h4>⚡ Quick 10</h4>
+        <p>10 questions, any mix of subjects/domains. Great for a study break.</p>
+      </div>
+      <div class="option-card" data-mode="custom">
+        <h4>🎛️ Custom Test</h4>
+        <p>Pick subject(s), domains, difficulty, exact question count, and timing yourself.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="optionsCard" style="display:none;">
+    <div class="card-title">2. Options</div>
+
+    <div class="field" id="subjectField">
+      <label>Subject</label>
+      <div class="chip-group" id="subjectChips">
+        <div class="chip" data-value="rw">Reading &amp; Writing</div>
+        <div class="chip" data-value="math">Math</div>
+      </div>
+    </div>
+
+    <div class="field" id="domainField" style="display:none;">
+      <label>Domains (leave all selected for a balanced mix)</label>
+      <div class="chip-group" id="domainChips"></div>
+    </div>
+
+    <div class="field" id="difficultyField" style="display:none;">
+      <label>Difficulty</label>
+      <div class="chip-group" id="difficultyChips">
+        <div class="chip selected" data-value="E">Easy</div>
+        <div class="chip selected" data-value="M">Medium</div>
+        <div class="chip selected" data-value="H">Hard</div>
+      </div>
+    </div>
+
+    <div class="field" id="countField" style="display:none;">
+      <label for="countInput">Number of questions</label>
+      <input type="number" id="countInput" min="1" max="100" value="20" />
+    </div>
+
+    <div class="field">
+      <label>
+        <input type="checkbox" id="timedCheckbox" checked style="width:auto;display:inline-block;margin-right:6px;" />
+        Time this test
+      </label>
+      <div class="field-hint" id="timingHint">Official timing will be used for this format.</div>
+    </div>
+
+    <div id="setupError" class="error-box" style="display:none;"></div>
+
+    <button class="btn btn-block btn-lg" id="startBtn">
+      Start Test
+    </button>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth } from "./js/auth.js";
+import { DOMAINS, SUBJECTS, MODULE_STRUCTURE, DEFAULT_PACE_SEC } from "./js/constants.js";
+import { buildFullTest, buildSection, buildModule, buildQuick10, customSet } from "./js/questions.js";
+import { TestSession } from "./js/test-engine.js";
+
+let currentUser = null;
+watchAuth((user) => {
+  currentUser = user;
+  if (!user) window.location.href = "index.html";
+});
+
+let mode = new URLSearchParams(location.search).get("mode") || null;
+let selectedSubjects = new Set();
+let selectedDomains = new Set();
+
+const optionsCard = document.getElementById("optionsCard");
+const subjectField = document.getElementById("subjectField");
+const domainField = document.getElementById("domainField");
+const difficultyField = document.getElementById("difficultyField");
+const countField = document.getElementById("countField");
+const timingHint = document.getElementById("timingHint");
+const timedCheckbox = document.getElementById("timedCheckbox");
+
+function selectMode(m) {
+  mode = m;
+  document.querySelectorAll(".option-card[data-mode]").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.mode === m);
+  });
+  optionsCard.style.display = "block";
+  selectedSubjects.clear();
+
+  // Subject picker: single-select for section/module, multi for quick10/custom, hidden for full.
+  subjectField.style.display = m === "full" ? "none" : "block";
+  domainField.style.display = m === "quick10" || m === "custom" ? "block" : "none";
+  difficultyField.style.display = m === "custom" ? "block" : "none";
+  countField.style.display = m === "custom" ? "block" : "none";
+
+  timedCheckbox.checked = m !== "quick10";
+  timingHint.textContent =
+    m === "custom"
+      ? "Untimed, or ~1.2 min/question if timed."
+      : m === "quick10"
+      ? "Quick 10 is untimed by default — check the box to add a light timer."
+      : "Official SAT timing will be used for this format.";
+
+  renderDomainChips();
+}
+
+document.querySelectorAll(".option-card[data-mode]").forEach((el) => {
+  el.addEventListener("click", () => selectMode(el.dataset.mode));
+});
+if (mode) selectMode(mode);
+
+document.querySelectorAll("#subjectChips .chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    const multi = mode === "quick10" || mode === "custom";
+    if (!multi) {
+      selectedSubjects.clear();
+      document.querySelectorAll("#subjectChips .chip").forEach((c) => c.classList.remove("selected"));
+    }
+    chip.classList.toggle("selected");
+    if (chip.classList.contains("selected")) selectedSubjects.add(chip.dataset.value);
+    else selectedSubjects.delete(chip.dataset.value);
+    renderDomainChips();
+  });
+});
+
+function renderDomainChips() {
+  const domainChips = document.getElementById("domainChips");
+  domainChips.innerHTML = "";
+  const subjects = selectedSubjects.size ? [...selectedSubjects] : ["rw", "math"];
+  const domains = [...new Set(subjects.flatMap((s) => DOMAINS[s]))];
+  selectedDomains = new Set(domains);
+  domains.forEach((d) => {
+    const chip = document.createElement("div");
+    chip.className = "chip selected";
+    chip.dataset.value = d;
+    chip.textContent = d;
+    chip.addEventListener("click", () => {
+      chip.classList.toggle("selected");
+      if (chip.classList.contains("selected")) selectedDomains.add(d);
+      else selectedDomains.delete(d);
+    });
+    domainChips.appendChild(chip);
+  });
+}
+
+document.querySelectorAll("#difficultyChips .chip").forEach((chip) => {
+  chip.addEventListener("click", () => chip.classList.toggle("selected"));
+});
+
+function getSelectedDifficulties() {
+  return [...document.querySelectorAll("#difficultyChips .chip.selected")].map((c) => c.dataset.value);
+}
+
+document.getElementById("startBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("startBtn");
+  const errBox = document.getElementById("setupError");
+  errBox.style.display = "none";
+
+  const defaultsToAllSubjects = mode === "full" || mode === "quick10";
+  const subjects = selectedSubjects.size ? [...selectedSubjects] : defaultsToAllSubjects ? ["rw", "math"] : [];
+  if (!defaultsToAllSubjects && subjects.length === 0) {
+    errBox.textContent = "Choose at least one subject.";
+    errBox.style.display = "block";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-spinner"></span> Building your test…';
+
+  try {
+    let modules = [];
+    const timed = timedCheckbox.checked;
+
+    if (mode === "full") {
+      modules = await buildFullTest({});
+    } else if (mode === "section") {
+      modules = await buildSection(subjects[0], {});
+    } else if (mode === "module") {
+      const m = await buildModule(subjects[0], {});
+      m.name = `${SUBJECTS[subjects[0]].label} Module`;
+      modules = [m];
+    } else if (mode === "quick10") {
+      modules = await buildQuick10({ subjects, domains: [...selectedDomains] });
+      if (timed && modules[0]) modules[0].minutes = Math.round((10 * DEFAULT_PACE_SEC.rw) / 60);
+    } else if (mode === "custom") {
+      const count = Math.max(1, Math.min(100, parseInt(document.getElementById("countInput").value, 10) || 20));
+      const difficulties = getSelectedDifficulties();
+      const questions = await customSet({
+        subjects,
+        domains: [...selectedDomains],
+        difficulties: difficulties.length ? difficulties : undefined,
+        count
+      });
+      const avgPace =
+        subjects.length === 1
+          ? DEFAULT_PACE_SEC[subjects[0]]
+          : (DEFAULT_PACE_SEC.rw + DEFAULT_PACE_SEC.math) / 2;
+      modules = [
+        {
+          subject: subjects.length === 1 ? subjects[0] : "both",
+          minutes: timed ? Math.round((count * avgPace) / 60) : null,
+          questions,
+          name: "Custom Test"
+        }
+      ];
+    }
+
+    const totalQ = modules.reduce((s, m) => s + m.questions.length, 0);
+    if (totalQ === 0) {
+      errBox.textContent =
+        "No questions matched those filters yet — the question bank may still be small. Try broadening your selection.";
+      errBox.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Start Test";
+      return;
+    }
+
+    const session = new TestSession({ mode, timed, modules });
+    session.save();
+    window.location.href = "test.html";
+  } catch (err) {
+    console.error(err);
+    errBox.textContent = "Couldn't build the test: " + (err.message || err);
+    errBox.style.display = "block";
+    btn.disabled = false;
+    btn.textContent = "Start Test";
+  }
+});
+</script>
+</body>
+</html>
