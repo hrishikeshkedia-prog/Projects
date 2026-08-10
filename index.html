@@ -328,7 +328,7 @@
     </div>
     <table class="fee-table" id="fee-table">
       <thead><tr>
-        <th>Student</th><th>Sessions</th><th>Rate</th><th>Amount Due</th><th>Status</th><th>Action</th>
+        <th>Student</th><th>Sessions</th><th>Rate</th><th>Fee</th><th>Status</th><th>Action</th>
       </tr></thead>
       <tbody id="fee-tbody"></tbody>
     </table>
@@ -1111,9 +1111,10 @@ function renderFees() {
                      !(s.originalDate || s.date).startsWith(selectedMonth))
         .map(s => s.rescheduledTo)
     );
-    const billable = mSess.filter(s =>
-      !priorRescheduleDates.has(s.date) &&
-      (s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent')));
+    // Exclude rescheduled-fulfillment sessions from both total and billable counts
+    const effectiveSess = mSess.filter(s => !priorRescheduleDates.has(s.date));
+    const billable = effectiveSess.filter(s =>
+      s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'));
     const feeRec = fees.find(f => f.studentId === st.id && f.month === selectedMonth) || {};
     let amount = 0;
     if (st.feeType === 'monthly') amount = st.fee || 0;
@@ -1122,7 +1123,7 @@ function renderFees() {
 
     return `<tr>
       <td><strong>${st.name}</strong><br><span style="font-size:12px;color:var(--muted)">${st.grade||''}</span></td>
-      <td>${mSess.length} total<br><span style="font-size:12px;color:var(--muted)">${billable.length} billable</span></td>
+      <td>${effectiveSess.length} total<br><span style="font-size:12px;color:var(--muted)">${billable.length} billable</span></td>
       <td>₹${st.fee||0} / ${st.feeType==='monthly'?'month':'session'}</td>
       <td style="font-weight:700;color:var(--success)">₹${amount}</td>
       <td><span class="badge ${paid?'badge-success':'badge-danger'}">${paid?'Paid':'Pending'}</span></td>
