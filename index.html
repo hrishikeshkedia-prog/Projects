@@ -483,12 +483,6 @@
         <label>Rescheduled To (New Date)</label>
         <input id="sess-rescheduled-to" type="date">
       </div>
-      <div class="form-group" style="padding:10px 12px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;">
-        <label class="checkbox-item" style="font-weight:500;margin:0;">
-          <input type="checkbox" id="sess-is-makeup" style="margin-right:7px;">
-          Makeup Class <span style="font-weight:400;color:var(--muted);font-size:12px;">– fee already billed in the original (rescheduled) month</span>
-        </label>
-      </div>
       <div class="form-group">
         <label>Recurring?</label>
         <div class="checkbox-group" id="recurring-days-wrap">
@@ -846,7 +840,7 @@ function renderSessions() {
         ${s.status==='cancelled'&&s.cancelledBy==='parent' ? `<span style="font-size:10px;color:#dc2626;">No refund</span>` : ''}
         ${s.status==='cancelled'&&s.cancelledBy==='tutor' ? `<span style="font-size:10px;color:#d97706;">Reschedule/Adjust</span>` : ''}
         ${s.status==='rescheduled'&&s.rescheduledTo ? `<span style="font-size:10px;color:#0284c7;">→ ${fmtDate(s.rescheduledTo)}</span>` : ''}
-        ${s.isMakeup ? `<span style="font-size:10px;color:#7c3aed;font-weight:600;background:#f5f3ff;padding:1px 5px;border-radius:4px;">Makeup</span>` : ''}
+        ${s.originalDate&&s.originalDate!==s.date ? `<span style="font-size:10px;color:#7c3aed;">Billed: ${fmtDate(s.originalDate)}</span>` : ''}
       </div>
       <div class="session-actions">
         <button class="btn-icon" onclick="viewSession('${s.id}')" title="View">👁</button>
@@ -867,7 +861,6 @@ function openAddSession(dateStr) {
   document.getElementById('cancelled-by-wrap').style.display = 'none';
   document.getElementById('rescheduled-to-wrap').style.display = 'none';
   document.getElementById('sess-rescheduled-to').value = '';
-  document.getElementById('sess-is-makeup').checked = false;
   document.getElementById('sess-lesson-plan').value = '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
   refreshStudentDropdowns();
@@ -888,7 +881,6 @@ function editSession(id) {
   document.getElementById('sess-cancelled-by').value = s.cancelledBy || 'parent';
   document.getElementById('rescheduled-to-wrap').style.display = s.status === 'rescheduled' ? 'block' : 'none';
   document.getElementById('sess-rescheduled-to').value = s.rescheduledTo || '';
-  document.getElementById('sess-is-makeup').checked = !!s.isMakeup;
   document.getElementById('sess-lesson-plan').value = s.lessonPlan || '';
   document.querySelectorAll('.rec-day').forEach(c => c.checked = false);
   refreshStudentDropdowns();
@@ -904,10 +896,16 @@ function saveSession() {
   const status     = document.getElementById('sess-status').value;
   const cancelledBy = document.getElementById('sess-cancelled-by').value;
   const rescheduledTo = document.getElementById('sess-rescheduled-to').value;
-  const isMakeup   = document.getElementById('sess-is-makeup').checked;
   const lessonPlan = document.getElementById('sess-lesson-plan').value.trim();
   if (!studentId || !date || !startTime || !endTime) { toast('Please fill all required fields'); return; }
   const existingId = document.getElementById('sess-id').value;
+  const existingSession = existingId ? sessions.find(s => s.id === existingId) : null;
+  let originalDate = '';
+  if (status === 'rescheduled') {
+    originalDate = existingSession ? (existingSession.originalDate || existingSession.date) : date;
+  } else if (existingSession && existingSession.originalDate) {
+    originalDate = existingSession.originalDate;
+  }
 
   const recurDays = Array.from(document.querySelectorAll('.rec-day:checked')).map(c => +c.value);
 
@@ -919,7 +917,7 @@ function saveSession() {
       const dt = new Date(y, m-1, d);
       if (recurDays.includes(dt.getDay())) {
         const ds = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        sessions.push({ id: uid(), studentId, date: ds, startTime, endTime, status, cancelledBy, rescheduledTo: status==='rescheduled'?rescheduledTo:'', isMakeup: isMakeup||false, lessonPlan, comment: '' });
+        sessions.push({ id: uid(), studentId, date: ds, startTime, endTime, status, cancelledBy, rescheduledTo: status==='rescheduled'?rescheduledTo:'', originalDate: status==='rescheduled'?ds:'', lessonPlan, comment: '' });
         added++;
       }
     }
@@ -931,7 +929,7 @@ function saveSession() {
     return;
   }
 
-  const obj = { id: existingId || uid(), studentId, date, startTime, endTime, status, cancelledBy, rescheduledTo: status==='rescheduled'?rescheduledTo:'', isMakeup: isMakeup||false, lessonPlan, comment: '' };
+  const obj = { id: existingId || uid(), studentId, date, startTime, endTime, status, cancelledBy, rescheduledTo: status==='rescheduled'?rescheduledTo:'', originalDate, lessonPlan, comment: '' };
   if (existingId) {
     const i = sessions.findIndex(s => s.id === existingId);
     obj.comment = sessions[i].comment || '';
@@ -977,7 +975,7 @@ function viewSession(id) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Date</div><div style="margin-top:3px;font-weight:600">${fmtDate(s.date)}</div></div>
         <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Time</div><div style="margin-top:3px;font-weight:600">${fmt12(s.startTime)} – ${fmt12(s.endTime)}</div></div>
-        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px;display:flex;flex-direction:column;gap:3px;"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span>${s.status==='cancelled'&&s.cancelledBy?`<span style="font-size:11px;color:var(--muted)">${s.cancelledBy==='parent'?'By parent – fee non-refundable':'By tutor – reschedule/adjust next month'}</span>`:''} ${s.status==='rescheduled'&&s.rescheduledTo?`<span style="font-size:11px;color:#0284c7;font-weight:600">→ New date: ${fmtDate(s.rescheduledTo)}</span>`:''} ${s.isMakeup?`<span style="font-size:11px;color:#7c3aed;font-weight:600;background:#f5f3ff;padding:2px 7px;border-radius:5px;">Makeup – not billed</span>`:''}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Status</div><div style="margin-top:3px;display:flex;flex-direction:column;gap:3px;"><span class="badge" style="background:${STATUS_COLORS[s.status]};color:${STATUS_TEXT[s.status]};font-size:13px">${STATUS_LABEL[s.status]}</span>${s.status==='cancelled'&&s.cancelledBy?`<span style="font-size:11px;color:var(--muted)">${s.cancelledBy==='parent'?'By parent – fee non-refundable':'By tutor – reschedule/adjust next month'}</span>`:''} ${s.status==='rescheduled'&&s.rescheduledTo?`<span style="font-size:11px;color:#0284c7;font-weight:600">→ New date: ${fmtDate(s.rescheduledTo)}</span>`:''} ${s.originalDate&&s.originalDate!==s.date?`<span style="font-size:11px;color:#7c3aed;font-weight:600">Billed in ${fmtDate(s.originalDate)}</span>`:''}</div></div>
         ${st?.fee ? `<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600">Fee</div><div style="margin-top:3px;font-weight:600;color:var(--success)">₹${st.fee}/${st.feeType==='monthly'?'mo':'session'}</div></div>` : ''}
       </div>
     </div>`;
@@ -1020,8 +1018,8 @@ function renderDashboard() {
   document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const now = new Date();
   const thisMonth = monthStr(now);
-  const mSess = sessions.filter(s => s.date.startsWith(thisMonth));
-  const earned = mSess.filter(s => !s.isMakeup && (s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent')))
+  const mSess = sessions.filter(s => (s.originalDate || s.date).startsWith(thisMonth));
+  const earned = mSess.filter(s => s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'))
     .reduce((sum, s) => {
       const st = getStudent(s.studentId);
       return sum + (st?.feeType === 'session' ? (st?.fee || 0) : 0);
@@ -1094,8 +1092,8 @@ function renderFees() {
   if (!students.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No students</td></tr>'; return; }
 
   tbody.innerHTML = students.map(st => {
-    const mSess = sessions.filter(s => s.studentId === st.id && s.date.startsWith(selectedMonth));
-    const billable = mSess.filter(s => !s.isMakeup && (s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent')));
+    const mSess = sessions.filter(s => s.studentId === st.id && (s.originalDate || s.date).startsWith(selectedMonth));
+    const billable = mSess.filter(s => s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'));
     const feeRec = fees.find(f => f.studentId === st.id && f.month === selectedMonth) || {};
     let amount = 0;
     if (st.feeType === 'monthly') amount = st.fee || 0;
