@@ -1019,7 +1019,17 @@ function renderDashboard() {
   const now = new Date();
   const thisMonth = monthStr(now);
   const mSess = sessions.filter(s => (s.originalDate || s.date).startsWith(thisMonth));
-  const earned = mSess.filter(s => s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'))
+  // Student+date pairs in thisMonth that fulfil a Rescheduled session billed in a prior month
+  const priorRescheduleKeys = new Set(
+    sessions
+      .filter(s => s.status === 'rescheduled' && s.rescheduledTo &&
+                   s.rescheduledTo.startsWith(thisMonth) &&
+                   !(s.originalDate || s.date).startsWith(thisMonth))
+      .map(s => s.studentId + '|' + s.rescheduledTo)
+  );
+  const earned = mSess.filter(s =>
+    !priorRescheduleKeys.has(s.studentId + '|' + s.date) &&
+    (s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent')))
     .reduce((sum, s) => {
       const st = getStudent(s.studentId);
       return sum + (st?.feeType === 'session' ? (st?.fee || 0) : 0);
@@ -1093,7 +1103,17 @@ function renderFees() {
 
   tbody.innerHTML = students.map(st => {
     const mSess = sessions.filter(s => s.studentId === st.id && (s.originalDate || s.date).startsWith(selectedMonth));
-    const billable = mSess.filter(s => s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'));
+    // Dates in selectedMonth that fulfil a Rescheduled session billed in a prior month
+    const priorRescheduleDates = new Set(
+      sessions
+        .filter(s => s.studentId === st.id && s.status === 'rescheduled' && s.rescheduledTo &&
+                     s.rescheduledTo.startsWith(selectedMonth) &&
+                     !(s.originalDate || s.date).startsWith(selectedMonth))
+        .map(s => s.rescheduledTo)
+    );
+    const billable = mSess.filter(s =>
+      !priorRescheduleDates.has(s.date) &&
+      (s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent')));
     const feeRec = fees.find(f => f.studentId === st.id && f.month === selectedMonth) || {};
     let amount = 0;
     if (st.feeType === 'monthly') amount = st.fee || 0;
