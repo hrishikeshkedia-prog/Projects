@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT Prep — Progress Summary</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%98%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="navbar no-print">
+  <div class="brand"><span class="dot">●</span> SAT Prep</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="test-setup.html">Practice Test</a>
+    <a href="progress.html">Progress</a>
+    <a href="formulas.html">Formulas &amp; Strategies</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div class="flex-between no-print mt-8" style="margin-bottom: 8px;">
+    <a href="progress.html">&larr; Back to Progress</a>
+    <button class="btn" id="printBtn">Print / Save as PDF</button>
+  </div>
+
+  <div id="content">
+    <div class="empty-state">Loading summary…</div>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth } from "./js/auth.js";
+import { fetchAttempts, summarizeAttempts } from "./js/progress.js";
+
+document.getElementById("printBtn").addEventListener("click", () => window.print());
+
+const RECENT_COUNT = 10;
+
+watchAuth((user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+  load(user);
+});
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+function modeLabel(mode) {
+  return (
+    { full: "Full Practice Test", section: "Section Practice", module: "Module Practice", quick10: "Quick 10", custom: "Custom Test" }[
+      mode
+    ] || mode
+  );
+}
+function fmtDate(ms) {
+  return ms ? new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
+}
+
+async function load(user) {
+  const content = document.getElementById("content");
+  const attempts = await fetchAttempts(user.uid);
+
+  if (attempts.length === 0) {
+    content.innerHTML = `
+      <div class="card empty-state">
+        <p>No completed practice tests yet — nothing to export.</p>
+        <a href="test-setup.html" class="btn mt-16">Start a practice test</a>
+      </div>`;
+    return;
+  }
+
+  const s = summarizeAttempts(attempts);
+  const chronological = attempts.slice().sort((a, b) => a.submittedAt - b.submittedAt);
+  const recent = chronological.slice(-RECENT_COUNT);
+  const firstDate = chronological[0].submittedAt;
+  const lastDate = chronological[chronological.length - 1].submittedAt;
+  const generatedOn = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+
+  content.innerHTML = `
+    <div class="card">
+      <h2 style="margin-bottom:2px;">SAT Prep — Progress Summary</h2>
+      <div class="muted">${escapeHtml(user.displayName || "Student")} &middot; ${escapeHtml(user.email || "")}</div>
+      <div class="muted mt-8" style="font-size:0.85rem;">
+        Generated on ${generatedOn} &middot; Covering ${s.totalTests} attempt${s.totalTests === 1 ? "" : "s"}
+        from ${fmtDate(firstDate)} to ${fmtDate(lastDate)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Overview</div>
+      <div class="grid grid-4 mt-16">
+        <div class="stat-tile"><div class="num">${s.totalTests}</div><div class="label">Tests taken</div></div>
+        <div class="stat-tile"><div class="num">${s.totalQuestions}</div><div class="label">Questions answered</div></div>
+        <div class="stat-tile"><div class="num">${s.overallAccuracy}%</div><div class="label">Overall accuracy</div></div>
+        <div class="stat-tile"><div class="num">${s.totalCorrect}</div><div class="label">Total correct</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Score Trend</div>
+      <div class="card-sub">Last ${recent.length} attempt${recent.length === 1 ? "" : "s"}, oldest to most recent</div>
+      <div id="trendRows" class="mt-16"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Accuracy by Domain</div>
+      <div class="card-sub">Across all ${s.totalTests} attempt${s.totalTests === 1 ? "" : "s"}, weakest first</div>
+      <div id="domainRows" class="mt-16"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Focus Areas</div>
+      <div class="card-sub">Skills with the lowest accuracy (min. 2 attempts) — where to spend the next study session</div>
+      <div id="skillRows" class="mt-16"></div>
+    </div>
+
+    <p class="muted no-print" style="font-size:0.8rem;">
+      Tip: use your browser's print dialog and choose "Save as PDF" as the destination to keep this as a file.
+    </p>
+  `;
+
+  const trendRows = document.getElementById("trendRows");
+  recent.forEach((a) => {
+    const row = document.createElement("div");
+    row.className = "bar-row";
+    row.innerHTML = `
+      <div class="bar-label">${fmtDate(a.submittedAt)} &middot; ${escapeHtml(modeLabel(a.mode))}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${a.percent}%"></div></div>
+      <div class="bar-pct">${a.correct}/${a.total} (${a.percent}%)</div>
+    `;
+    trendRows.appendChild(row);
+  });
+
+  const domainRows = document.getElementById("domainRows");
+  s.byDomain
+    .slice()
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .forEach((d) => {
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      row.innerHTML = `
+        <div class="bar-label">${escapeHtml(d.label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${d.accuracy}%"></div></div>
+        <div class="bar-pct">${d.correct}/${d.total} (${d.accuracy}%)</div>
+      `;
+      domainRows.appendChild(row);
+    });
+
+  const skillRows = document.getElementById("skillRows");
+  if (s.weakestSkills.length === 0) {
+    skillRows.innerHTML = `<p class="muted">Not enough repeated skill data yet — complete a few more tests to surface focus areas.</p>`;
+  } else {
+    s.weakestSkills.forEach((sk) => {
+      const row = document.createElement("div");
+      row.className = "bar-row";
+      row.innerHTML = `
+        <div class="bar-label">${escapeHtml(sk.label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${sk.accuracy}%; background: var(--danger);"></div></div>
+        <div class="bar-pct">${sk.correct}/${sk.total} (${sk.accuracy}%)</div>
+      `;
+      skillRows.appendChild(row);
+    });
+  }
+}
+</script>
+</body>
+</html>

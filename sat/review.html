@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SAT Prep — Review</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%93%98%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="navbar">
+  <div class="brand"><span class="dot">●</span> SAT Prep</div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="test-setup.html">Practice Test</a>
+    <a href="progress.html">Progress</a>
+    <a href="formulas.html">Formulas &amp; Strategies</a>
+  </nav>
+</div>
+
+<div class="container">
+  <div id="content">
+    <div class="empty-state">Loading results…</div>
+  </div>
+</div>
+
+<script type="module">
+import { watchAuth } from "./js/auth.js";
+import { fetchAttempt } from "./js/progress.js";
+import { getQuestionsByIds } from "./js/questions.js";
+
+const attemptId = new URLSearchParams(location.search).get("attempt");
+let currentUser = null;
+
+watchAuth((user) => {
+  currentUser = user;
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+  if (!attemptId) {
+    window.location.href = "progress.html";
+    return;
+  }
+  load();
+});
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str ?? "";
+  return div.innerHTML;
+}
+
+function diffBadge(d) {
+  const map = { E: ["badge-e", "Easy"], M: ["badge-m", "Medium"], H: ["badge-h", "Hard"] };
+  const [cls, label] = map[d] || ["badge-m", d];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+async function load() {
+  const content = document.getElementById("content");
+  try {
+    const attempt = await fetchAttempt(currentUser.uid, attemptId);
+    if (!attempt) {
+      content.innerHTML = `<div class="empty-state">Couldn't find that test attempt.</div>`;
+      return;
+    }
+    const questions = await getQuestionsByIds(attempt.questionIds || []);
+    const qById = Object.fromEntries(questions.map((q) => [q.id, q]));
+
+    const dateStr = attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : "";
+
+    content.innerHTML = `
+      <div class="card">
+        <div class="flex-between">
+          <div>
+            <div class="card-title">Results — ${modeLabel(attempt.mode)}</div>
+            <div class="card-sub">${dateStr}</div>
+          </div>
+          <a href="test-setup.html" class="btn">Take another test</a>
+        </div>
+        <div class="grid grid-4 mt-16">
+          <div class="stat-tile"><div class="num">${attempt.correct}/${attempt.total}</div><div class="label">Correct</div></div>
+          <div class="stat-tile"><div class="num">${attempt.percent}%</div><div class="label">Accuracy</div></div>
+          <div class="stat-tile"><div class="num">${fmtDuration(attempt.durationSec)}</div><div class="label">Time taken</div></div>
+          <div class="stat-tile"><div class="num">${attempt.timed ? "Yes" : "No"}</div><div class="label">Timed</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">By Domain</div>
+        <div id="domainBars" class="mt-16"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Question Review</div>
+        <div class="card-sub">Green = your correct answer. Red = your incorrect pick, with the correct answer shown.</div>
+        <div id="questionReview" class="mt-16"></div>
+      </div>
+    `;
+
+    const domainBars = document.getElementById("domainBars");
+    (attempt.byDomain || [])
+      .slice()
+      .sort((a, b) => a.correct / a.total - b.correct / b.total)
+      .forEach((d) => {
+        const pct = d.total ? Math.round((d.correct / d.total) * 100) : 0;
+        const row = document.createElement("div");
+        row.className = "bar-row";
+        row.innerHTML = `
+          <div class="bar-label">${escapeHtml(d.label)}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="bar-pct">${d.correct}/${d.total}</div>
+        `;
+        domainBars.appendChild(row);
+      });
+
+    const reviewEl = document.getElementById("questionReview");
+    (attempt.questionIds || []).forEach((qid, i) => {
+      const q = qById[qid];
+      if (!q) return;
+      const ans = (attempt.answers || {})[qid] || {};
+      const isCorrect = ans.selected === q.answer;
+      const block = document.createElement("div");
+      block.className = "card";
+      block.style.boxShadow = "none";
+      block.innerHTML = `
+        <div class="question-meta">Q${i + 1} &middot; ${q.domain} &middot; ${q.skill} ${diffBadge(q.difficulty)}</div>
+        ${q.passage ? `<div class="passage">${escapeHtml(q.passage)}</div>` : ""}
+        <div class="prompt">${escapeHtml(q.prompt)}</div>
+        <div class="choice-list" id="choices-${i}"></div>
+        <div class="mt-16"><strong>Explanation: </strong>${escapeHtml(q.explanation)}</div>
+      `;
+      const list = block.querySelector(`#choices-${i}`);
+      q.choices.forEach((c) => {
+        const div = document.createElement("div");
+        let cls = "choice";
+        if (c.key === q.answer) cls += " review-correct";
+        else if (c.key === ans.selected) cls += " review-incorrect";
+        div.className = cls;
+        div.innerHTML = `<div class="key">${c.key}</div><div>${escapeHtml(c.text)}${
+          c.key === ans.selected && !isCorrect ? " <em>(your answer)</em>" : ""
+        }${c.key === q.answer ? " <em>(correct)</em>" : ""}</div>`;
+        list.appendChild(div);
+      });
+      if (!ans.selected) {
+        const note = document.createElement("div");
+        note.className = "muted mt-8";
+        note.textContent = "You left this question unanswered.";
+        block.appendChild(note);
+      }
+      reviewEl.appendChild(block);
+    });
+  } catch (err) {
+    console.error(err);
+    content.innerHTML = `<div class="empty-state">Something went wrong loading this attempt: ${escapeHtml(err.message || String(err))}</div>`;
+  }
+}
+
+function modeLabel(mode) {
+  return { full: "Full Practice Test", section: "Section Practice", module: "Module Practice", quick10: "Quick 10", custom: "Custom Test" }[mode] || mode;
+}
+function fmtDuration(sec) {
+  if (!sec) return "—";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}m ${s}s`;
+}
+</script>
+</body>
+</html>

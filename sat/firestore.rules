@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Question bank: any signed-in student can read questions to take
+    // practice tests, but only the trusted seed script (using the Admin
+    // SDK, which bypasses these rules) may write questions.
+    match /questions/{questionId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Each user can only read/write their own profile and their own
+    // subcollections (test attempts, progress).
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /attempts/{attemptId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // float() is required here: int / int in rules is truncating integer
+        // division, which disagrees with the JS-side Math.round((correct/total)*100)
+        // in js/test-engine.js's score() for most non-exact fractions (e.g. 2/3
+        // rounds to 67 in JS but truncates to 66 here) and would reject valid writes.
+        allow create: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.correct is int
+          && request.resource.data.total is int
+          && request.resource.data.correct >= 0
+          && request.resource.data.correct <= request.resource.data.total
+          && request.resource.data.percent == math.round(100 * float(request.resource.data.correct) / request.resource.data.total);
+        // Attempts are immutable once written — no edits, no deletes.
+        allow update, delete: if false;
+      }
+    }
+  }
+}
