@@ -315,3 +315,16 @@ input:focus, select:focus, textarea:focus {
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }
+
+/* Print-friendly export view (export.html) */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .container { max-width: 100%; padding: 0; }
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+    break-inside: avoid;
+  }
+  .bar-fill { background: #666 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
