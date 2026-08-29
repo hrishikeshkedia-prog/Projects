@@ -1108,7 +1108,7 @@ function renderFees() {
     // Exclude rescheduled-fulfillment sessions from both total and billable counts
     const effectiveSess = mSess.filter(s => !priorRescheduleDates.has(s.date.trim()));
     const billable = effectiveSess.filter(s =>
-      s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'));
+      s.status === 'scheduled' || s.status === 'completed' || s.status === 'rescheduled' || (s.status === 'cancelled' && s.cancelledBy === 'parent'));
     const feeRec = fees.find(f => f.studentId === st.id && f.month === selectedMonth) || {};
     let amount = 0;
     if (st.feeType === 'monthly') amount = st.fee || 0;
