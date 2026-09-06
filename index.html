@@ -756,11 +756,10 @@ function renderCalendar() {
   const today = todayStr();
   const calMonthStr = calYear + '-' + (calMonth+1).toString().padStart(2,'0');
   const monthSessions = sessions.filter(s => s.date.startsWith(calMonthStr));
-  // Sessions from other months rescheduled into this calendar month
+  // Sessions rescheduled to a date in this calendar month (same or different month original)
   const rescheduledHere = sessions.filter(s =>
     s.status === 'rescheduled' && s.rescheduledTo &&
-    s.rescheduledTo.startsWith(calMonthStr) &&
-    !s.date.startsWith(calMonthStr)
+    s.rescheduledTo.startsWith(calMonthStr)
   );
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
