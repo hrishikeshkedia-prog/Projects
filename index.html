@@ -754,7 +754,14 @@ function renderCalendar() {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const daysInPrev  = new Date(calYear, calMonth, 0).getDate();
   const today = todayStr();
-  const monthSessions = sessions.filter(s => s.date.startsWith(calYear + '-' + (calMonth+1).toString().padStart(2,'0')));
+  const calMonthStr = calYear + '-' + (calMonth+1).toString().padStart(2,'0');
+  const monthSessions = sessions.filter(s => s.date.startsWith(calMonthStr));
+  // Sessions from other months rescheduled into this calendar month
+  const rescheduledHere = sessions.filter(s =>
+    s.status === 'rescheduled' && s.rescheduledTo &&
+    s.rescheduledTo.startsWith(calMonthStr) &&
+    !s.date.startsWith(calMonthStr)
+  );
 
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let html = DAYS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
@@ -766,10 +773,11 @@ function renderCalendar() {
   for (let d = 1; d <= remaining; d++) cells.push({ day: d, type: 'next' });
 
   cells.forEach(({ day, type }) => {
-    const dateStr = type === 'cur' ? `${calYear}-${(calMonth+1).toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}` : null;
+    const dateStr = type === 'cur' ? `${calMonthStr}-${day.toString().padStart(2,'0')}` : null;
     const daySessions = dateStr ? monthSessions.filter(s => s.date === dateStr).sort((a,b) => a.startTime.localeCompare(b.startTime)) : [];
+    const dayRescheduled = dateStr ? rescheduledHere.filter(s => s.rescheduledTo === dateStr) : [];
     const isToday = dateStr === today;
-    const hasSess = daySessions.length > 0;
+    const hasSess = daySessions.length > 0 || dayRescheduled.length > 0;
     html += `<div class="cal-day${type!=='cur'?' other-month':''}${isToday?' today':''}${hasSess?' has-session':''}"
       onclick="${dateStr ? `calDayClick('${dateStr}')` : ''}" style="${!dateStr?'cursor:default':''}">
       <div class="cal-date">${day}</div>
@@ -781,6 +789,11 @@ function renderCalendar() {
         const iconHtml = sIcon ? `<span style="color:${STATUS_TEXT[s.status]};font-weight:700;margin-right:2px">${sIcon}</span>` : '';
         return `<div class="cal-session" style="background:${(st?.color||'#6366f1')}22;color:${st?.color||'#6366f1'};border-left:3px solid ${st?.color||'#6366f1'};${fadedStyle}"
           onclick="event.stopPropagation();viewSession('${s.id}')">${iconHtml}${st?.name||'?'}${lpIcon}</div>`;
+      }).join('')}
+      ${dayRescheduled.map(s => {
+        const st = getStudent(s.studentId);
+        return `<div class="cal-session" style="background:#e0f2fe;color:#0284c7;border-left:3px dashed #0284c7;font-style:italic;"
+          onclick="event.stopPropagation();viewSession('${s.id}')">🕐 ${st?.name||'?'}</div>`;
       }).join('')}
     </div>`;
   });
