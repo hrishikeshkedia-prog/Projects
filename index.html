@@ -479,8 +479,9 @@
         </select>
       </div>
       <div class="form-group" id="rescheduled-to-wrap" style="display:none;">
-        <label>Rescheduled To (New Date)</label>
+        <label>Rescheduled To (New Date) <span style="color:var(--danger)">*</span></label>
         <input id="sess-rescheduled-to" type="date">
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Set this so the class is excluded from the new month's billing</div>
       </div>
       <div class="form-group">
         <label>Recurring?</label>
@@ -897,6 +898,7 @@ function saveSession() {
   const rescheduledTo = document.getElementById('sess-rescheduled-to').value;
   const lessonPlan = document.getElementById('sess-lesson-plan').value.trim();
   if (!studentId || !date || !startTime || !endTime) { toast('Please fill all required fields'); return; }
+  if (status === 'rescheduled' && !rescheduledTo) { toast('Please set the Rescheduled To date'); document.getElementById('sess-rescheduled-to').focus(); return; }
   const existingId = document.getElementById('sess-id').value;
   const existingSession = existingId ? sessions.find(s => s.id === existingId) : null;
   let originalDate = '';
